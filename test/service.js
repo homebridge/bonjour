@@ -90,7 +90,7 @@ test('_records() - minimal', function (t) {
 })
 
 test('_records() - everything', function (t) {
-  const s = new Service({ name: 'Foo Bar', type: 'http', protocol: 'tcp', port: 3000, host: 'example.com', txt: { foo: 'bar' } , addUnsafeServiceEnumerationRecord: true })
+  const s = new Service({ name: 'Foo Bar', type: 'http', protocol: 'tcp', port: 3000, host: 'example.com', txt: { foo: 'bar' }, addUnsafeServiceEnumerationRecord: true })
   t.deepEqual(s._records(), [
     { data: s.fqdn, name: '_http._tcp.local', ttl: 4500, type: 'PTR' },
     { data: { port: 3000, target: 'example.com' }, name: s.fqdn, ttl: 120, flush: true, type: 'SRV' },
