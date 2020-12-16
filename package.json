@@ -1,6 +1,6 @@
 {
   "name": "bonjour-hap",
-  "version": "3.6.0",
+  "version": "3.6.1",
   "description": "A Bonjour/Zeroconf implementation in pure JavaScript (for HAP)",
   "main": "index.js",
   "author": "Thomas Watson Steen <w@tson.dk> (https://twitter.com/wa7son)",
