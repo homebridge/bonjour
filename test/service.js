@@ -20,7 +20,7 @@ const getAddressesRecords = function (host) {
   })
 
   addresses.forEach(address => {
-    records.push({ data: address, name: host, ttl: 120, type: ip.isV4Format(address) ? 'A' : 'AAAA' })
+    records.push({ data: address, name: host, ttl: 120, flush: true, type: ip.isV4Format(address) ? 'A' : 'AAAA' })
   })
 
   return records
@@ -81,20 +81,22 @@ test('txt', function (t) {
 
 test('_records() - minimal', function (t) {
   const s = new Service({ name: 'Foo Bar', type: 'http', protocol: 'tcp', port: 3000 })
-  t.deepEqual(s._records(), [
-    { data: s.fqdn, name: '_http._tcp.local', ttl: 28800, type: 'PTR' },
-    { data: { port: 3000, target: os.hostname() }, name: s.fqdn, ttl: 120, type: 'SRV' },
-    { data: [], name: s.fqdn, ttl: 120, type: 'TXT' }
+  t.deepEqual(s._records(true), [
+    { data: s.fqdn, name: '_http._tcp.local', ttl: 4500, type: 'PTR' },
+    { data: { port: 3000, target: os.hostname() }, name: s.fqdn, ttl: 120, flush: true, type: 'SRV' },
+    { data: [], name: s.fqdn, ttl: 4500, flush: true, type: 'TXT' }
   ].concat(getAddressesRecords(s.host)))
   t.end()
 })
 
 test('_records() - everything', function (t) {
-  const s = new Service({ name: 'Foo Bar', type: 'http', protocol: 'tcp', port: 3000, host: 'example.com', txt: { foo: 'bar' } })
+  const s = new Service({ name: 'Foo Bar', type: 'http', protocol: 'tcp', port: 3000, host: 'example.com', txt: { foo: 'bar' } , addUnsafeServiceEnumerationRecord: true })
   t.deepEqual(s._records(), [
-    { data: s.fqdn, name: '_http._tcp.local', ttl: 28800, type: 'PTR' },
-    { data: { port: 3000, target: 'example.com' }, name: s.fqdn, ttl: 120, type: 'SRV' },
-    { data: ['foo=bar'], name: s.fqdn, ttl: 120, type: 'TXT' }
-  ].concat(getAddressesRecords(s.host)))
+    { data: s.fqdn, name: '_http._tcp.local', ttl: 4500, type: 'PTR' },
+    { data: { port: 3000, target: 'example.com' }, name: s.fqdn, ttl: 120, flush: true, type: 'SRV' },
+    { data: ['foo=bar'], name: s.fqdn, ttl: 4500, flush: true, type: 'TXT' }
+  ].concat(getAddressesRecords(s.host)).concat([
+    { data: '_http._tcp.local', ttl: 4500, type: 'PTR', name: '_services._dns-sd._udp.local' }
+  ]))
   t.end()
 })
