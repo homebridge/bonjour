@@ -32,6 +32,13 @@
     "broadcast",
     "dns-sd"
   ],
+  "files": [
+    "lib",
+    "LICENSE",
+    "package.json",
+    "index.js",
+    "README.md"
+  ],
   "dependencies": {
     "array-flatten": "^2.1.2",
     "deep-equal": "^2.0.5",
