@@ -1,11 +1,11 @@
 'use strict'
 
-var os = require('os')
+const os = require('os')
 const ip = require('ip')
-var test = require('tape')
-var Service = require('../lib/Service.js')
+const test = require('tape')
+const Service = require('../lib/Service.js')
 
-var getAddressesRecords = function (host) {
+const getAddressesRecords = function (host) {
   const records = []
 
   const addresses = []
@@ -48,7 +48,7 @@ test('no port', function (t) {
 })
 
 test('minimal', function (t) {
-  var s = new Service({ name: 'Foo Bar', type: 'http', port: 3000 })
+  const s = new Service({ name: 'Foo Bar', type: 'http', port: 3000 })
   t.equal(s.name, 'Foo Bar')
   t.equal(s.protocol, 'tcp')
   t.equal(s.type, '_http._tcp')
@@ -62,25 +62,25 @@ test('minimal', function (t) {
 })
 
 test('protocol', function (t) {
-  var s = new Service({ name: 'Foo Bar', type: 'http', port: 3000, protocol: 'udp' })
+  const s = new Service({ name: 'Foo Bar', type: 'http', port: 3000, protocol: 'udp' })
   t.deepEqual(s.protocol, 'udp')
   t.end()
 })
 
 test('host', function (t) {
-  var s = new Service({ name: 'Foo Bar', type: 'http', port: 3000, host: 'example.com' })
+  const s = new Service({ name: 'Foo Bar', type: 'http', port: 3000, host: 'example.com' })
   t.deepEqual(s.host, 'example.com')
   t.end()
 })
 
 test('txt', function (t) {
-  var s = new Service({ name: 'Foo Bar', type: 'http', port: 3000, txt: { foo: 'bar' } })
+  const s = new Service({ name: 'Foo Bar', type: 'http', port: 3000, txt: { foo: 'bar' } })
   t.deepEqual(s.txt, { foo: 'bar' })
   t.end()
 })
 
 test('_records() - minimal', function (t) {
-  var s = new Service({ name: 'Foo Bar', type: 'http', protocol: 'tcp', port: 3000 })
+  const s = new Service({ name: 'Foo Bar', type: 'http', protocol: 'tcp', port: 3000 })
   t.deepEqual(s._records(), [
     { data: s.fqdn, name: '_http._tcp.local', ttl: 28800, type: 'PTR' },
     { data: { port: 3000, target: os.hostname() }, name: s.fqdn, ttl: 120, type: 'SRV' },
@@ -90,7 +90,7 @@ test('_records() - minimal', function (t) {
 })
 
 test('_records() - everything', function (t) {
-  var s = new Service({ name: 'Foo Bar', type: 'http', protocol: 'tcp', port: 3000, host: 'example.com', txt: { foo: 'bar' } })
+  const s = new Service({ name: 'Foo Bar', type: 'http', protocol: 'tcp', port: 3000, host: 'example.com', txt: { foo: 'bar' } })
   t.deepEqual(s._records(), [
     { data: s.fqdn, name: '_http._tcp.local', ttl: 28800, type: 'PTR' },
     { data: { port: 3000, target: 'example.com' }, name: s.fqdn, ttl: 120, type: 'SRV' },

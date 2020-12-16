@@ -1,8 +1,8 @@
 'use strict'
 
-var Registry = require('./lib/Registry.js')
-var Server = require('./lib/Server.js')
-var Browser = require('./lib/Browser.js')
+const Registry = require('./lib/Registry.js')
+const Server = require('./lib/Server.js')
+const Browser = require('./lib/Browser.js')
 
 function Bonjour (opts) {
   if (!(this instanceof Bonjour)) { return new Bonjour(opts) }
@@ -25,7 +25,7 @@ Bonjour.prototype = {
   },
 
   findOne: function (opts, cb) {
-    var browser = new Browser(this._server.mdns, opts)
+    const browser = new Browser(this._server.mdns, opts)
     browser.once('up', function (service) {
       browser.stop()
       if (cb) cb(service)
