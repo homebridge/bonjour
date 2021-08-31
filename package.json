@@ -42,7 +42,7 @@
   "dependencies": {
     "array-flatten": "^2.1.2",
     "deep-equal": "^2.0.5",
-    "multicast-dns": "^7.2.2",
+    "multicast-dns": "^7.2.3",
     "multicast-dns-service-types": "^1.1.0",
     "ip": "^1.1.5"
   },
