@@ -1,11 +1,10 @@
 'use strict'
 
 const os = require('os')
-const ip = require('ip')
 const test = require('tape')
 const Service = require('../lib/Service.js')
 
-const ipv4Regex = /^(\d{1,3}\.){3,3}\d{1,3}$/;
+const ipv4Regex = /^(\d{1,3}\.){3,3}\d{1,3}$/
 
 const getAddressesRecords = function (host) {
   const records = []
