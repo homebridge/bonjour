@@ -2,7 +2,7 @@
 
 ![NPM-Version](https://badgen.net/npm/v/bonjour-hap)
 ![NPM-Downloads](https://badgen.net/npm/dt/bonjour-hap)
-![Node-CI](https://github.com/homebridge/bonjour/workflows/Node-CI/badge.svg)
+[![Node Build](https://github.com/homebridge/bonjour/actions/workflows/nodejs.yml/badge.svg)](https://github.com/homebridge/bonjour/actions/workflows/nodejs.yml)
 [![Coverage Status](https://coveralls.io/repos/github/homebridge/bonjour/badge.svg?branch=master)](https://coveralls.io/github/homebridge/bonjour?branch=master)
 
 A Bonjour/Zeroconf protocol implementation in pure JavaScript. Publish
