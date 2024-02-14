@@ -1,9 +1,10 @@
 'use strict'
 
 const os = require('os')
-const ip = require('ip')
 const test = require('tape')
 const Service = require('../lib/Service.js')
+
+const ipv4Regex = /^(\d{1,3}\.){3,3}\d{1,3}$/
 
 const getAddressesRecords = function (host) {
   const records = []
@@ -20,7 +21,7 @@ const getAddressesRecords = function (host) {
   })
 
   addresses.forEach(address => {
-    records.push({ data: address, name: host, ttl: 120, flush: true, type: ip.isV4Format(address) ? 'A' : 'AAAA' })
+    records.push({ data: address, name: host, ttl: 120, flush: true, type: ipv4Regex.test(address) ? 'A' : 'AAAA' })
   })
 
   return records

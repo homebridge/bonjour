@@ -41,16 +41,15 @@
   ],
   "dependencies": {
     "array-flatten": "^2.1.2",
-    "deep-equal": "^2.0.5",
+    "deep-equal": "^2.2.3",
     "multicast-dns": "^7.2.5",
-    "multicast-dns-service-types": "^1.1.0",
-    "ip": "^1.1.8"
+    "multicast-dns-service-types": "^1.1.0"
   },
   "devDependencies": {
     "after-all": "^2.0.2",
-    "standard": "^17.0.0",
-    "tape": "^5.6.1",
+    "standard": "^17.1.0",
+    "tape": "^5.7.5",
     "nyc": "^15.1.0",
-    "rimraf": "^3.0.2"
+    "rimraf": "^5.0.5"
   }
 }
