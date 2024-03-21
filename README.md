@@ -112,6 +112,10 @@ Options are the same as given in the `browser.find` function.
 
 Emitted every time a new service is found that matches the browser.
 
+#### `Event: update`
+
+Emitted every time a update to a service is found that matches the browser.
+
 #### `Event: down`
 
 Emitted every time an existing service emmits a goodbye message.
