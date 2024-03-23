@@ -126,8 +126,8 @@ test('bonjour.change and up event', function (bonjour, t) {
     t.end()
   }, 3000) // Wait 3000 ms for any additional up messages when the updateTxt is sent
   const service = bonjour.publish({ name: 'Baz', type: 'test', port: 3000, txt: { foo: 'originalUp' } }).on('up', function () {
-    if (!data.serviceUp) {  // Workaround for Service.up firing when service.updateTxt is used
-      data.serviceUp = true;
+    if (!data.serviceUp) { // Workaround for Service.up firing when service.updateTxt is used
+      data.serviceUp = true
       const browser = bonjour.find({ type: 'test' })
       browser.on('up', function (s) {
         t.equal(s.txt.foo, 'originalUp')
@@ -141,7 +141,6 @@ test('bonjour.change and up event', function (bonjour, t) {
   })
 })
 
-
 test('bonjour.change and update event', function (bonjour, t) {
   const data = { updateTxtSent: false, success: false, timer: null, serviceUp: false }
   data.timer = setTimeout(function () {
@@ -150,8 +149,8 @@ test('bonjour.change and update event', function (bonjour, t) {
     t.end()
   }, 3000) // Wait for the record to update maximum 3000 ms
   const service = bonjour.publish({ name: 'Baz', type: 'test', port: 3000, txt: { foo: 'original' } }).on('up', function () {
-    if (!data.serviceUp) {  // Workaround for Service.up firing when service.updateTxt is used
-      data.serviceUp = true;
+    if (!data.serviceUp) { // Workaround for Service.up firing when service.updateTxt is used
+      data.serviceUp = true
       const browser = bonjour.find({ type: 'test' })
       browser.on('up', function (s) {
         t.equal(s.txt.foo, 'original')
@@ -165,7 +164,7 @@ test('bonjour.change and update event', function (bonjour, t) {
         if (s.txt.foo === 'update') { // Ignore updates that we are not interested in, have seen updates of just address information
           t.equal(s.txt.foo, 'update')
           data.success = true
-          clearTimeout(data.timer);
+          clearTimeout(data.timer)
           bonjour.destroy()
           t.end()
         }
@@ -173,7 +172,6 @@ test('bonjour.change and update event', function (bonjour, t) {
     }
   })
 })
-
 
 test('bonjour.find - binary txt', function (bonjour, t) {
   const next = afterAll(function () {
