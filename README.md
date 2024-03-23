@@ -140,7 +140,7 @@ Broadcast the query again.
 
 #### `Event: up`
 
-Emitted when the service is up.
+Emitted when the service is up, and if the txt record of the service is updated `service.updateTxt(object)`.
 
 #### `Event: error`
 
