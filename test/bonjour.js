@@ -118,32 +118,58 @@ test('bonjour.find', function (bonjour, t) {
   bonjour.publish({ name: 'Baz', type: 'test', port: 3000, txt: { foo: 'bar' } }).on('up', next())
 })
 
-test('bonjour.change', function (bonjour, t) {
-  const data = { init: true, found: false, timer: null }
-  const service = bonjour.publish({ name: 'Baz', type: 'test', port: 3000, txt: { foo: 'bar' } }).on('up', function () {
-    const browser = bonjour.find({ type: 'test' })
-    browser.on('up', function (s) {
-      data.browserData = s
+test('bonjour.change and up event', function (bonjour, t) {
+  const data = { updateTxtSent: false, found: false, timer: null, serviceUp: false }
+  data.timer = setTimeout(function () {
+    t.equal(data.found, true)
+    bonjour.destroy()
+    t.end()
+  }, 3000) // Wait 3000 ms for any additional up messages when the updateTxt is sent
+  const service = bonjour.publish({ name: 'Baz', type: 'test', port: 3000, txt: { foo: 'originalUp' } }).on('up', function () {
+    if (!data.serviceUp) { // Workaround for Service.up firing when service.updateTxt is used
+      data.serviceUp = true
+      const browser = bonjour.find({ type: 'test' })
+      browser.on('up', function (s) {
+        t.equal(s.txt.foo, 'originalUp')
+        data.found = true
+        if (!data.updateTxtSent) {
+          data.updateTxtSent = true
+          service.updateTxt({ foo: 'updateUp' })
+        }
+      })
+    }
+  })
+})
 
-      if (data.init) {
-        t.equal(s.txt.foo, 'bar')
-        data.timer = setTimeout(function () {
-          t.equal(s.txt.foo, 'baz')
+test('bonjour.change and update event', function (bonjour, t) {
+  const data = { updateTxtSent: false, success: false, timer: null, serviceUp: false }
+  data.timer = setTimeout(function () {
+    t.equal(data.success, true)
+    bonjour.destroy()
+    t.end()
+  }, 3000) // Wait for the record to update maximum 3000 ms
+  const service = bonjour.publish({ name: 'Baz', type: 'test', port: 3000, txt: { foo: 'original' } }).on('up', function () {
+    if (!data.serviceUp) { // Workaround for Service.up firing when service.updateTxt is used
+      data.serviceUp = true
+      const browser = bonjour.find({ type: 'test' })
+      browser.on('up', function (s) {
+        t.equal(s.txt.foo, 'original')
+        if (!data.updateTxtSent) {
+          data.updateTxtSent = true
+          service.updateTxt({ foo: 'update' })
+        }
+      })
+
+      browser.on('update', function (s) {
+        if (s.txt.foo === 'update') { // Ignore updates that we are not interested in, have seen updates of just address information
+          t.equal(s.txt.foo, 'update')
+          data.success = true
+          clearTimeout(data.timer)
           bonjour.destroy()
           t.end()
-        }, 3000) // Wait for the record to update maximum 3000 ms
-        data.init = false
-        service.updateTxt({ foo: 'baz' })
-      }
-
-      if (!data.init && !data.found && s.txt.foo === 'baz') {
-        data.found = true
-        clearTimeout(data.timer)
-        t.equal(s.txt.foo, 'baz')
-        bonjour.destroy()
-        t.end()
-      }
-    })
+        }
+      })
+    }
   })
 })
 

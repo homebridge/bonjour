@@ -112,6 +112,10 @@ Options are the same as given in the `browser.find` function.
 
 Emitted every time a new service is found that matches the browser.
 
+#### `Event: update`
+
+Emitted every time an update is received for existing service is found that matches the browser.
+
 #### `Event: down`
 
 Emitted every time an existing service emmits a goodbye message.
@@ -136,7 +140,7 @@ Broadcast the query again.
 
 #### `Event: up`
 
-Emitted when the service is up.
+Emitted when the service is up, and if the txt record of the service is updated `service.updateTxt(object)`.
 
 #### `Event: error`
 
