@@ -3,6 +3,7 @@ name: "Build and Publish"
 # Simple automated publishing for projects
 
 # Automatically publishes beta releases, when a change is pushed to a beta branch
+
 # For a latest/production release, workflow must be manually kicked off / started from `Actions --> Build and Publish`.  ( This is by design to prevent accidental production releases.)
 # Latest release includes a github release
 
