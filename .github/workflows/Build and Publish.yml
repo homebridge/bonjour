@@ -3,16 +3,20 @@ name: "Build and Publish"
 # Simple automated publishing for projects
 
 # Automatically publishes beta releases, when a change is pushed to a beta branch
-# For a production release, with workflow must be manually kicked off / started from Actions --> Build and Publish.  This is by design to prevent accidental production releases.concurrency: 
+
+# For a latest/production release, workflow must be manually kicked off / started from `Actions --> Build and Publish`.  ( This is by design to prevent accidental production releases.)
+# Latest release includes a github release
 
 # Release Workflow ( Beta --> Production )
 
-# 1 - Create a new branch including the target release version ie `beta-0.5.6`
-# 2 - Update the package.json version tag to match, and push release to the `beta-0.5.6` branch.  This will trigger a npm release with the beta tag, and npm version set to `0.5.6-beta.0`.
-# 3 - As updates are made to the beta branch, npm beta releases will be created.
-# 4 - Once the release is complete, and ready for general release, create a pull request to merge the changes into the `latest` branch.
-# 5 - After reviews are complete, merge the pull request
-# 6 - For the general release, the workflow must be manually kicked off / started from Actions --> Build and Publish
+# 1 - Determine what the target version will be for the final release and update the package.json version number ( ie `0.5.6`)
+# 2 - Create a new branch including the target release version ie `beta-0.5.6`
+# 3 - Commit the updated package.json to the new beta branch.  This will trigger a npm release with the beta tag, and npm version set to `0.5.6-beta.0`.
+# 4 - As updates are made to the beta branch, npm beta releases will be created.
+# 5 - Once the release is complete, and ready for latest/production release, create a pull request to merge the changes into the `latest` branch.
+# 6 - After reviews are complete, merge the pull request
+# 7 - For the latest/production release, the workflow must be manually kicked off / started from Actions --> Build and Publish
+# 8 - Delete beta branch
 
 on:
   push:
