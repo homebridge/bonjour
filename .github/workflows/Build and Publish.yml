@@ -1,0 +1,88 @@
+name: "Build and Publish"
+
+# Simple automated publishing for projects
+
+# Automatically publishes beta releases, when a change is pushed to a beta branch
+# For a latest/production release, workflow must be manually kicked off / started from `Actions --> Build and Publish`.  ( This is by design to prevent accidental production releases.)
+# Latest release includes a github release
+
+# Release Workflow ( Beta --> Production )
+
+# 1 - Determine what the target version will be for the final release and update the package.json version number ( ie `0.5.6`)
+# 2 - Create a new branch including the target release version ie `beta-0.5.6`
+# 3 - Commit the updated package.json to the new beta branch.  This will trigger a npm release with the beta tag, and npm version set to `0.5.6-beta.0`.
+# 4 - As updates are made to the beta branch, npm beta releases will be created.
+# 5 - Once the release is complete, and ready for latest/production release, create a pull request to merge the changes into the `latest` branch.
+# 6 - After reviews are complete, merge the pull request
+# 7 - For the latest/production release, the workflow must be manually kicked off / started from Actions --> Build and Publish
+# 8 - Delete beta branch
+
+on:
+  push:
+    branches: [beta-*.*.*, beta]
+  workflow_dispatch:
+
+jobs:
+  get_tags:
+    runs-on: ubuntu-latest
+
+    steps:
+    # checkout repo
+    - uses: actions/checkout@v4
+
+    # get branch / tag name
+    - name: Get Branch / Tag Name
+      id: get_branch
+      run: |
+        export BRANCH_NAME=$(if [[ ${GITHUB_REF} =~ "refs/tags/" ]]; then echo ${GITHUB_REF/refs\/tags\//}; else echo ${GITHUB_REF/refs\/heads\//}; fi)
+        echo $BRANCH_NAME
+        echo "BRANCH_NAME=${BRANCH_NAME}" >> $GITHUB_OUTPUT
+    # generate the image tag
+    - name: Get Image Tag
+      id: get_tag
+      run: |
+        export TARGET_IMAGE_TAG=$(if [ "${{ steps.get_branch.outputs.BRANCH_NAME }}" = "latest" ]; then echo "latest"; else echo "${{ steps.get_branch.outputs.BRANCH_NAME }}" | awk -F- '{ print $1 }'; fi)
+        echo $TARGET_IMAGE_TAG
+        echo "TARGET_IMAGE_TAG=${TARGET_IMAGE_TAG}" >> $GITHUB_OUTPUT
+    outputs:
+      BRANCH_NAME: ${{ steps.get_branch.outputs.BRANCH_NAME }}
+      TARGET_IMAGE_TAG: ${{ steps.get_tag.outputs.TARGET_IMAGE_TAG }}
+
+  publish_prod_release:
+    needs: get_tags
+    name: Publish Release Version
+    if: ${{ needs.get_tags.outputs.BRANCH_NAME == 'latest' }}
+    uses: homebridge/.github/.github/workflows/npm-publish.yml@latest
+    with:
+      install_cmd: npm ci
+    secrets:
+      npm_auth_token: ${{ secrets.npm_token }}
+
+  publish_test:
+    needs: get_tags
+    name: Publish Test Version - ${{ needs.get_tags.outputs.BRANCH_NAME }}
+    if: ${{ needs.get_tags.outputs.BRANCH_NAME != 'latest' }}
+    uses: homebridge/.github/.github/workflows/npm-publish.yml@latest
+    with:
+      tag: ${{ needs.get_tags.outputs.TARGET_IMAGE_TAG }}
+      dynamically_adjust_version: true
+      npm_version_command: 'pre'
+      pre_id: ${{ needs.get_tags.outputs.TARGET_IMAGE_TAG }}
+    secrets:
+          npm_auth_token: ${{ secrets.npm_token }}
+
+  publish_github_release:
+    needs: [publish_prod_release]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ needs.publish_prod_release.outputs.NPM_VERSION }}
+        name: Release ${{ needs.publish_prod_release.outputs.NPM_VERSION }}
+        generate_release_notes: true
+        draft: false
+        prerelease: false
