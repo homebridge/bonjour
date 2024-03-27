@@ -1,4 +1,4 @@
-name: "Build and Publish"
+name: "Build, Test and Publish"
 
 # Simple automated publishing for projects
 
@@ -15,7 +15,7 @@ name: "Build and Publish"
 # 4 - As updates are made to the beta branch, npm beta releases will be created.
 # 5 - Once the release is complete, and ready for latest/production release, create a pull request to merge the changes into the `latest` branch.
 # 6 - After reviews are complete, merge the pull request
-# 7 - For the latest/production release, the workflow must be manually kicked off / started from Actions --> Build and Publish
+# 7 - For the latest/production release, the workflow must be manually kicked off / started from Actions --> Build, Test and Publish
 # 8 - Delete beta branch
 
 on:
@@ -49,18 +49,31 @@ jobs:
       BRANCH_NAME: ${{ steps.get_branch.outputs.BRANCH_NAME }}
       TARGET_IMAGE_TAG: ${{ steps.get_tag.outputs.TARGET_IMAGE_TAG }}
 
+  build_and_test:
+    uses: homebridge/.github/.github/workflows/nodejs-build-and-test.yml@latest
+    with:
+      enable_coverage: true
+    secrets:
+      token: ${{ secrets.GITHUB_TOKEN }}
+  lint:
+    needs: build_and_test
+    uses: homebridge/.github/.github/workflows/eslint.yml@latest
+  lint-docs:
+    needs: build_and_test
+    uses: homebridge/.github/.github/workflows/lint-docs.yml@latest    
+
   publish_prod_release:
-    needs: get_tags
+    needs: [get_tags, lint, lint-docs]
     name: Publish Release Version
     if: ${{ needs.get_tags.outputs.BRANCH_NAME == 'latest' }}
     uses: homebridge/.github/.github/workflows/npm-publish.yml@latest
     with:
       install_cmd: npm ci
     secrets:
-      npm_auth_token: ${{ secrets.npm_token }}
+      npm_auth_token: ${{ secrets.NPM_TOKEN }}
 
   publish_test:
-    needs: get_tags
+    needs: [get_tags, lint, lint-docs]
     name: Publish Test Version - ${{ needs.get_tags.outputs.BRANCH_NAME }}
     if: ${{ needs.get_tags.outputs.BRANCH_NAME != 'latest' }}
     uses: homebridge/.github/.github/workflows/npm-publish.yml@latest
@@ -70,7 +83,7 @@ jobs:
       npm_version_command: 'pre'
       pre_id: ${{ needs.get_tags.outputs.TARGET_IMAGE_TAG }}
     secrets:
-          npm_auth_token: ${{ secrets.npm_token }}
+      npm_auth_token: ${{ secrets.NPM_TOKEN }}
 
   publish_github_release:
     needs: [publish_prod_release]
@@ -82,8 +95,8 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: ${{ needs.publish_prod_release.outputs.NPM_VERSION }}
-        name: Release ${{ needs.publish_prod_release.outputs.NPM_VERSION }}
+        tag_name: v${{ needs.publish_prod_release.outputs.NPM_VERSION }}
+        name: Release v${{ needs.publish_prod_release.outputs.NPM_VERSION }}
         generate_release_notes: true
         draft: false
         prerelease: false
