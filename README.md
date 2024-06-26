@@ -1,9 +1,17 @@
+<p align="center">
+  <a href="https://homebridge.io"><img src="https://raw.githubusercontent.com/homebridge/branding/latest/logos/homebridge-color-round-stylized.png" height="140"></a>
+</p>
+<span align="center">
+  
 # bonjour-hap
+  
+  <a href="https://www.npmjs.com/package/bonjour-hap"><img title="npm version" src="https://badgen.net/npm/v/bonjour-hap" ></a>
+  <a href="https://www.npmjs.com/package/bonjour-hap/v/beta"><img title="npm version beta" src="https://badgen.net/npm/v/bonjour-hap/beta" ></a>
+  <a href="https://www.npmjs.com/package/bonjour-hap"><img title="npm downloads" src="https://badgen.net/npm/dt/bonjour-hap" ></a>
+  <a href="https://github.com/homebridge/bonjour/actions/workflows/build.yml"><img title="Node Build" src="https://github.com/homebridge/bonjour/actions/workflows/build.yml/badge.svg" ></a>
+  <a href='https://coveralls.io/github/homebridge/bonjour?branch=latest'><img src='https://coveralls.io/repos/github/homebridge/bonjour/badge.svg?branch=latest' alt='Coverage Status' /></a>
 
-![NPM-Version](https://badgen.net/npm/v/bonjour-hap)
-![NPM-Downloads](https://badgen.net/npm/dt/bonjour-hap)
-[![Node Build](https://github.com/homebridge/bonjour/actions/workflows/nodejs.yml/badge.svg)](https://github.com/homebridge/bonjour/actions/workflows/nodejs.yml)
-[![Coverage Status](https://coveralls.io/repos/github/homebridge/bonjour/badge.svg?branch=master)](https://coveralls.io/github/homebridge/bonjour?branch=master)
+</span>
 
 A Bonjour/Zeroconf protocol implementation in pure JavaScript. Publish
 services on the local network or discover existing services using
