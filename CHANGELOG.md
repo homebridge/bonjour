@@ -2,11 +2,11 @@
 
 All notable changes to `hap-nodejs` will be documented in this file. This project tries to adhere to [Semantic Versioning](http://semver.org/).
 
-## v3.8.1 (2025-07-23)
+## v3.9.1 (2025-07-23)
 
 - Dependency updates
 
-## v3.8.0 (2024-12-21)
+## v3.9.0 (2024-12-21)
 
 - Add TypeScript typing.
 - Dependency updates.
