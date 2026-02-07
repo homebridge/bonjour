@@ -5,6 +5,7 @@ All notable changes to `hap-nodejs` will be documented in this file. This projec
 ## v3.9.2 (Unreleased)
 
 - dependency updates
+- update release script for oidc releases
 
 ## v3.9.1 (2025-07-23)
 
