@@ -1,13 +1,15 @@
 # Change Log
 
-All notable changes to `hap-nodejs` will be documented in this file. This project tries to adhere to [Semantic Versioning](http://semver.org/).
+All notable changes to `bonjour-hap` will be documented in this file. This project tries to adhere to [Semantic Versioning](http://semver.org/).
 
-## v3.9.2 (Unreleased)
+## v3.10.0 (2026-02-07)
 
 - dependency updates
 - update release script for oidc releases
 - add `package-lock.json` to npm package
 - add `.github/labeler.yml` for workflow
+- chore: remove `array-flatten`, use native `Array.prototype.flat` (#28) (@Uzlopak)
+- chore: replace `deep-equal` with `fast-deep-equal` (#27) (@Uzlopak)
 
 ## v3.9.1 (2025-07-23)
 
