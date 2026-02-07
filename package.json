@@ -37,6 +37,7 @@
     "lib",
     "LICENSE",
     "package.json",
+    "package-lock.json",
     "index.js",
     "index.d.ts",
     "README.md"

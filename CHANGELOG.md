@@ -6,6 +6,7 @@ All notable changes to `hap-nodejs` will be documented in this file. This projec
 
 - dependency updates
 - update release script for oidc releases
+- add `package-lock.json` to npm package
 
 ## v3.9.1 (2025-07-23)
 
