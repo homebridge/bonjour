@@ -2,9 +2,11 @@
 
 const os = require('os')
 const dgram = require('dgram')
+const EventEmitter = require('events').EventEmitter
 const tape = require('tape')
 const afterAll = require('after-all')
 const Service = require('../lib/Service.js')
+const Browser = require('../lib/Browser.js')
 const Bonjour = require('../')
 
 const getAddresses = function () {
@@ -233,4 +235,51 @@ test('bonjour.findOne - emitter', function (bonjour, t) {
 
   bonjour.publish({ name: 'Emitter', type: 'test', port: 3000 }).on('up', next())
   bonjour.publish({ name: 'Invalid', type: 'test2', port: 3000 }).on('up', next())
+})
+
+// Test that addresses from a prior packet are cached and reused when a
+// subsequent packet for the same service type contains no A/AAAA records.
+// This simulates the real-world scenario where a DNS response spans multiple
+// UDP packets and address records only appear in earlier packets.
+tape('bonjour.find - multi-packet address caching', function (t) {
+  const mdns = new EventEmitter()
+  mdns.query = function () {}
+
+  const rinfo = { address: '127.0.0.1', family: 'IPv4', port: 5353, size: 0 }
+
+  const browser = new Browser(mdns, { type: 'test' })
+
+  browser.on('up', function (s) {
+    if (s.name === 'Packet1Service') {
+      // Service from first packet should have addresses directly from the packet
+      t.deepEqual(s.addresses, ['192.168.1.10'], 'packet 1 service has address from packet')
+    } else if (s.name === 'Packet2Service') {
+      // Service from second packet (no A record) should reuse cached address
+      t.deepEqual(s.addresses, ['192.168.1.10'], 'packet 2 service reuses cached address')
+      browser.stop()
+      t.end()
+    }
+  })
+
+  // First packet: contains PTR + SRV + TXT + A record for a hostname
+  mdns.emit('response', {
+    answers: [
+      { type: 'PTR', name: '_test._tcp.local', data: 'Packet1Service._test._tcp.local', ttl: 4500 },
+      { type: 'SRV', name: 'Packet1Service._test._tcp.local', data: { target: 'myhost.local', port: 1234 }, ttl: 120 },
+      { type: 'TXT', name: 'Packet1Service._test._tcp.local', data: [], ttl: 4500 },
+      { type: 'A', name: 'myhost.local', data: '192.168.1.10', ttl: 120 }
+    ],
+    additionals: []
+  }, rinfo)
+
+  // Second packet: contains PTR + SRV + TXT for a different service on the SAME
+  // host but NO A record (simulating a multi-packet response)
+  mdns.emit('response', {
+    answers: [
+      { type: 'PTR', name: '_test._tcp.local', data: 'Packet2Service._test._tcp.local', ttl: 4500 },
+      { type: 'SRV', name: 'Packet2Service._test._tcp.local', data: { target: 'myhost.local', port: 5678 }, ttl: 120 },
+      { type: 'TXT', name: 'Packet2Service._test._tcp.local', data: [], ttl: 4500 }
+    ],
+    additionals: []
+  }, rinfo)
 })
