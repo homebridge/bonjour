@@ -1,6 +1,6 @@
 {
   "name": "bonjour-hap",
-  "version": "3.10.1",
+  "version": "3.10.2",
   "description": "A Bonjour/Zeroconf implementation in pure JavaScript (for HAP)",
   "main": "index.js",
   "types": "index.d.ts",

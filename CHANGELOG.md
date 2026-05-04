@@ -2,7 +2,7 @@
 
 All notable changes to `bonjour-hap` will be documented in this file. This project tries to adhere to [Semantic Versioning](http://semver.org/).
 
-## v3.10.2 (Pending Release)
+## v3.10.2 (2026-05-04)
 
 - add `.DS_Store` and `.idea` to `gitignore` file
 - dependency updates
