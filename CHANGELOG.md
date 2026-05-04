@@ -5,6 +5,7 @@ All notable changes to `bonjour-hap` will be documented in this file. This proje
 ## v3.10.2 (Pending Release)
 
 - add `.DS_Store` and `.idea` to `gitignore` file
+- dependency updates
 
 ## v3.10.1 (2026-03-29)
 
