@@ -19,6 +19,7 @@ All notable changes to `bonjour-hap` will be documented in this file. This proje
 - fix: broadcast goodbye records during Bonjour.destroy()
 - fix(server): warn instead of crash when mdns respond fails
 - fix(service): include meta-enumeration PTR in goodbye records
+- fix: surface mdns errors via Bonjour 'error' event
 
 ## v3.10.2 (2026-05-04)
 

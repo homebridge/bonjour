@@ -1,5 +1,7 @@
 'use strict'
 
+const util = require('util')
+const EventEmitter = require('events').EventEmitter
 const Registry = require('./lib/Registry.js')
 const Server = require('./lib/Server.js')
 const Browser = require('./lib/Browser.js')
@@ -7,11 +9,22 @@ const Browser = require('./lib/Browser.js')
 function Bonjour (opts) {
   if (!(this instanceof Bonjour)) { return new Bonjour(opts) }
 
+  EventEmitter.call(this)
+
   this._server = new Server(opts)
   this._registry = new Registry(this._server)
+  this._server.on('error', err => {
+    if (this.listenerCount('error') > 0) {
+      this.emit('error', err)
+    } else {
+      console.warn('bonjour-hap:', err.message || err)
+    }
+  })
 }
 
-Bonjour.prototype = {
+util.inherits(Bonjour, EventEmitter)
+
+Object.assign(Bonjour.prototype, {
   publish: function (opts) {
     return this._registry.publish(opts)
   },
@@ -39,6 +52,6 @@ Bonjour.prototype = {
       if (cb) cb()
     })
   }
-}
+})
 
 module.exports = Bonjour

@@ -155,6 +155,12 @@ export interface Bonjour {
    * The optional callback fires once teardown is complete.
    */
   destroy(callback?: () => void): void;
+  /**
+   * Emitted when the underlying mdns socket reports an error or an
+   * outgoing response fails. If no listener is attached, the error is
+   * logged to `console.warn` so it does not crash the process.
+   */
+  on(event: "error", listener: (err: Error) => void): this;
 }
 
 export interface BonjourFactory {
