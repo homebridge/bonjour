@@ -9,6 +9,7 @@ All notable changes to `bonjour-hap` will be documented in this file. This proje
 - fix(server): continue past unanswered questions in multi-question queries
 - fix(browser): handle null opts in constructor
 - fix(service): make stop() callback truly optional
+- fix(server): compare names case-insensitively when unregistering records
 
 ## v3.10.2 (2026-05-04)
 
