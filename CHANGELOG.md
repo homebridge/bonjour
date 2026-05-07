@@ -18,6 +18,7 @@ All notable changes to `bonjour-hap` will be documented in this file. This proje
 - fix(browser): suppress no-op 'update' events when nothing changed
 - fix: broadcast goodbye records during Bonjour.destroy()
 - fix(server): warn instead of crash when mdns respond fails
+- fix(service): include meta-enumeration PTR in goodbye records
 
 ## v3.10.2 (2026-05-04)
 
