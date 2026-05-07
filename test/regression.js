@@ -64,3 +64,22 @@ tape('Server answers each question independently in multi-question packets', fun
     bonjour.destroy(function () { t.end() })
   })
 })
+
+// === 4a620ff — Browser: handle null opts in constructor ===
+
+tape('Browser does not throw when opts is explicitly null', function (t) {
+  port(function (p) {
+    const bonjour = Bonjour({ ip: '127.0.0.1', port: p, multicast: false })
+    t.doesNotThrow(function () { bonjour.find(null, function () {}) })
+    bonjour.destroy(function () { t.end() })
+  })
+})
+
+tape('Browser supports the find(fn) shorthand (recurses with null opts)', function (t) {
+  port(function (p) {
+    const bonjour = Bonjour({ ip: '127.0.0.1', port: p, multicast: false })
+    // eslint-disable-next-line array-callback-return
+    t.doesNotThrow(function () { bonjour.find(function () {}) })
+    bonjour.destroy(function () { t.end() })
+  })
+})
