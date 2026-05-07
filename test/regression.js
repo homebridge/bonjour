@@ -292,3 +292,48 @@ tape('Service.announce() (public entry) resets delay back to 1 s', function (t) 
   s._destroyed = true
   t.end()
 })
+
+// === 87068e8 — Service: don't resurrect a torn-down service in announce callback ===
+
+tape('onAnnounceComplete bails out when service was deactivated mid-announce', function (t) {
+  const s = new Service({ name: 'Foo', type: 'http', port: 3000 })
+  s._activated = true
+  s.packet = s._records()
+
+  const realSetTimeout = global.setTimeout
+  let scheduledNext = false
+  global.setTimeout = function () {
+    scheduledNext = true
+    return { unref: function () { return this } }
+  }
+
+  let upFired = false
+  s.on('up', function () { upFired = true })
+  s.on('service-announce-request', function () {})
+
+  s.announce()
+  s._activated = false // user calls stop() between announce() and the respond callback
+
+  s.onAnnounceComplete() // mdns invokes the announce-complete callback
+
+  global.setTimeout = realSetTimeout
+
+  t.equal(s._activated, false, 'remained inactive — not resurrected')
+  t.equal(s.published, false, 'not marked published')
+  t.equal(upFired, false, 'no spurious up event')
+  t.equal(scheduledNext, false, 'no follow-up re-announce scheduled')
+  t.end()
+})
+
+tape('onAnnounceComplete bails out for destroyed services', function (t) {
+  const s = new Service({ name: 'Foo', type: 'http', port: 3000 })
+  s._activated = true
+  s.packet = s._records()
+  s._destroyed = true
+
+  s.on('service-announce-request', function () {})
+  s.onAnnounceComplete()
+
+  t.equal(s.published, false, 'destroyed service not marked published')
+  t.end()
+})
