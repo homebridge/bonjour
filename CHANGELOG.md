@@ -11,6 +11,7 @@ All notable changes to `bonjour-hap` will be documented in this file. This proje
 - fix(service): make stop() callback truly optional
 - fix(server): compare names case-insensitively when unregistering records
 - fix(browser): compare wildcard PTR name case-insensitively
+- fix(browser): dedup wildcard PTR queries by service type, not parent name
 
 ## v3.10.2 (2026-05-04)
 
