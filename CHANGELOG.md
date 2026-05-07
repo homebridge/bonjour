@@ -5,6 +5,7 @@ All notable changes to `bonjour-hap` will be documented in this file. This proje
 ## v3.10.3 (Pending Release)
 
 - fix(types): align `index.d.ts` with runtime
+- chore: dependency updates
 
 ## v3.10.2 (2026-05-04)
 
