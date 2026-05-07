@@ -388,3 +388,45 @@ tape('Browser still emits update when user-visible TXT actually changes', functi
     bonjour.destroy(function () { t.end() })
   })
 })
+
+// === f5e1333 — Bonjour.destroy() broadcasts goodbye records ===
+
+tape('Bonjour.destroy() broadcasts ttl=0 goodbye PTR records before closing', function (t) {
+  port(function (p) {
+    const bonjour = Bonjour({ ip: '127.0.0.1', port: p, multicast: false })
+
+    const respondCalls = []
+    const orig = bonjour._server.mdns.respond.bind(bonjour._server.mdns)
+    bonjour._server.mdns.respond = function (records) {
+      respondCalls.push(records)
+      return orig.apply(null, arguments)
+    }
+
+    bonjour.publish({ name: 'GoodbyeTest', type: 'goodbye', port: 3000, probe: false })
+      .on('up', function () {
+        const announceCount = respondCalls.length
+        bonjour.destroy(function () {
+          const newCalls = respondCalls.slice(announceCount)
+          const allRecords = newCalls.flatMap(function (rs) { return Array.isArray(rs) ? rs : [rs] })
+          const goodbyePtrs = allRecords.filter(function (r) { return r.type === 'PTR' && r.ttl === 0 })
+          t.ok(goodbyePtrs.length > 0, 'at least one ttl=0 PTR record was broadcast')
+          t.ok(goodbyePtrs.some(function (r) { return r.data === 'GoodbyeTest._goodbye._tcp.local' }),
+            'goodbye for our service was broadcast')
+          t.end()
+        })
+      })
+  })
+})
+
+tape('Bonjour.destroy(cb) callback fires after teardown completes', function (t) {
+  port(function (p) {
+    const bonjour = Bonjour({ ip: '127.0.0.1', port: p, multicast: false })
+    bonjour.publish({ name: 'CbTest', type: 'cbtest', port: 3000, probe: false })
+      .on('up', function () {
+        bonjour.destroy(function () {
+          t.pass('destroy callback fired')
+          t.end()
+        })
+      })
+  })
+})

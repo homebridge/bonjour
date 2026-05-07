@@ -149,7 +149,12 @@ export interface Bonjour {
     options: BonjourFindOptions,
     callback?: (service: BonjourService) => void
   ): Browser;
-  destroy(): void;
+  /**
+   * Tear down the responder. Goodbye records are broadcast for every
+   * published service before the underlying mdns socket is closed.
+   * The optional callback fires once teardown is complete.
+   */
+  destroy(callback?: () => void): void;
 }
 
 export interface BonjourFactory {
