@@ -129,3 +129,25 @@ tape('Server.unregister leaves non-matching records intact', function (t) {
     bonjour.destroy(function () { t.end() })
   })
 })
+
+// === 8d8d9aa — Browser: wildcard meta-PTR name comparison is case-insensitive ===
+
+tape('Browser wildcard accepts a meta-enumeration PTR with mixed-case name', function (t) {
+  port(function (p) {
+    const bonjour = Bonjour({ ip: '127.0.0.1', port: p, multicast: false })
+    const queries = []
+    bonjour._server.mdns.query = function (name, type) { queries.push({ name, type }) }
+
+    const browser = bonjour.find()
+    queries.length = 0
+
+    browser._onresponse({
+      answers: [{ type: 'PTR', name: '_Services._DNS-SD._UDP.local', data: '_http._tcp.local' }],
+      additionals: []
+    }, { address: '127.0.0.1', port: 5353 })
+
+    t.ok(queries.some(function (q) { return q.name === '_http._tcp.local' }),
+      'queried for the service type carried by a mixed-case meta-PTR')
+    bonjour.destroy(function () { t.end() })
+  })
+})

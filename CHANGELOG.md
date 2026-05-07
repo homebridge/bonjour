@@ -10,6 +10,7 @@ All notable changes to `bonjour-hap` will be documented in this file. This proje
 - fix(browser): handle null opts in constructor
 - fix(service): make stop() callback truly optional
 - fix(server): compare names case-insensitively when unregistering records
+- fix(browser): compare wildcard PTR name case-insensitively
 
 ## v3.10.2 (2026-05-04)
 
