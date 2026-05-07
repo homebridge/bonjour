@@ -524,3 +524,44 @@ tape('goodbye for a non-meta service does not emit a meta-enum PTR', function (t
     })
   })
 })
+
+// === aa7c289 — surface mdns errors via Bonjour 'error' event ===
+
+tape('Bonjour emits error event when mdns.respond callback fails', function (t) {
+  port(function (p) {
+    const bonjour = Bonjour({ ip: '127.0.0.1', port: p, multicast: false })
+
+    let received = null
+    bonjour.on('error', function (err) { received = err })
+
+    bonjour._server.mdns.respond = function (records, cb) {
+      setImmediate(function () { if (cb) cb(new Error('boom')) })
+    }
+
+    bonjour._server.register({ name: 'X._tcp.local', type: 'PTR', ttl: 120, data: 'a' })
+    bonjour._server._respondToQuery({ questions: [{ name: 'X._tcp.local', type: 'PTR' }] })
+
+    setTimeout(function () {
+      t.ok(received instanceof Error, 'error event fired')
+      t.equal(received.message, 'boom')
+      bonjour.destroy(function () { t.end() })
+    }, 50)
+  })
+})
+
+tape('Bonjour forwards underlying mdns socket errors via the error event', function (t) {
+  port(function (p) {
+    const bonjour = Bonjour({ ip: '127.0.0.1', port: p, multicast: false })
+
+    let received = null
+    bonjour.on('error', function (err) { received = err })
+
+    bonjour._server.mdns.emit('error', new Error('socket boom'))
+
+    setImmediate(function () {
+      t.ok(received instanceof Error, 'socket error forwarded')
+      t.equal(received.message, 'socket boom')
+      bonjour.destroy(function () { t.end() })
+    })
+  })
+})
