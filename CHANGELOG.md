@@ -14,6 +14,7 @@ All notable changes to `bonjour-hap` will be documented in this file. This proje
 - fix(browser): dedup wildcard PTR queries by service type, not parent name
 - fix(prober): unref the initial probe-jitter timer
 - fix(service): restore exponential re-announce backoff
+- fix(service): don't resurrect torn-down services in announce callback
 
 ## v3.10.2 (2026-05-04)
 
