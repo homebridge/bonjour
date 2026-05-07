@@ -16,6 +16,7 @@ All notable changes to `bonjour-hap` will be documented in this file. This proje
 - fix(service): restore exponential re-announce backoff
 - fix(service): don't resurrect torn-down services in announce callback
 - fix(browser): suppress no-op 'update' events when nothing changed
+- fix: broadcast goodbye records during Bonjour.destroy()
 
 ## v3.10.2 (2026-05-04)
 
