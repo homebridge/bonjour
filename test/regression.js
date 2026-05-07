@@ -430,3 +430,32 @@ tape('Bonjour.destroy(cb) callback fires after teardown completes', function (t)
       })
   })
 })
+
+// === 48c0393 — Server: warn instead of crash when mdns.respond callback errors ===
+
+tape('mdns.respond callback error does not raise uncaughtException', function (t) {
+  port(function (p) {
+    const bonjour = Bonjour({ ip: '127.0.0.1', port: p, multicast: false })
+
+    let uncaught = null
+    const onUncaught = function (err) { uncaught = err }
+    process.on('uncaughtException', onUncaught)
+
+    // attach an error listener so that, in versions where the server emits
+    // 'error' rather than warning, the EventEmitter does not itself raise
+    bonjour.on('error', function () {})
+
+    bonjour._server.mdns.respond = function (records, cb) {
+      setImmediate(function () { if (cb) cb(new Error('post-shutdown send error')) })
+    }
+
+    bonjour._server.register({ name: 'X._tcp.local', type: 'PTR', ttl: 120, data: 'a' })
+    bonjour._server._respondToQuery({ questions: [{ name: 'X._tcp.local', type: 'PTR' }] })
+
+    setTimeout(function () {
+      process.removeListener('uncaughtException', onUncaught)
+      t.equal(uncaught, null, 'no uncaughtException from a benign respond callback error')
+      bonjour.destroy(function () { t.end() })
+    }, 50)
+  })
+})
