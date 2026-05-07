@@ -12,6 +12,7 @@ All notable changes to `bonjour-hap` will be documented in this file. This proje
 - fix(server): compare names case-insensitively when unregistering records
 - fix(browser): compare wildcard PTR name case-insensitively
 - fix(browser): dedup wildcard PTR queries by service type, not parent name
+- fix(prober): unref the initial probe-jitter timer
 
 ## v3.10.2 (2026-05-04)
 
