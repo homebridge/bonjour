@@ -151,3 +151,50 @@ tape('Browser wildcard accepts a meta-enumeration PTR with mixed-case name', fun
     bonjour.destroy(function () { t.end() })
   })
 })
+
+// === 61d9f11 — Browser: dedup wildcard PTR queries by service type, not parent name ===
+
+tape('Browser wildcard does not re-query for an already-discovered service type', function (t) {
+  port(function (p) {
+    const bonjour = Bonjour({ ip: '127.0.0.1', port: p, multicast: false })
+    const queries = []
+    bonjour._server.mdns.query = function (name, type) { queries.push({ name, type }) }
+
+    const browser = bonjour.find()
+    queries.length = 0
+
+    const packet = {
+      answers: [{ type: 'PTR', name: '_services._dns-sd._udp.local', data: '_http._tcp.local' }],
+      additionals: []
+    }
+    browser._onresponse(packet, { address: '127.0.0.1', port: 5353 })
+    browser._onresponse(packet, { address: '127.0.0.1', port: 5353 })
+
+    const httpQueries = queries.filter(function (q) { return q.name === '_http._tcp.local' })
+    t.equal(httpQueries.length, 1, 'second identical PTR did not trigger another query')
+    bonjour.destroy(function () { t.end() })
+  })
+})
+
+tape('Browser wildcard still queries for distinct service types', function (t) {
+  port(function (p) {
+    const bonjour = Bonjour({ ip: '127.0.0.1', port: p, multicast: false })
+    const queries = []
+    bonjour._server.mdns.query = function (name, type) { queries.push({ name, type }) }
+
+    const browser = bonjour.find()
+    queries.length = 0
+
+    browser._onresponse({
+      answers: [
+        { type: 'PTR', name: '_services._dns-sd._udp.local', data: '_http._tcp.local' },
+        { type: 'PTR', name: '_services._dns-sd._udp.local', data: '_ftp._tcp.local' }
+      ],
+      additionals: []
+    }, { address: '127.0.0.1', port: 5353 })
+
+    t.ok(queries.some(function (q) { return q.name === '_http._tcp.local' }), 'queried http')
+    t.ok(queries.some(function (q) { return q.name === '_ftp._tcp.local' }), 'queried ftp')
+    bonjour.destroy(function () { t.end() })
+  })
+})
