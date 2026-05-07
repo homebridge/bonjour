@@ -100,3 +100,32 @@ tape('Service.stop(cb) on inactive service still invokes the callback', function
     t.end()
   })
 })
+
+// === 3138182 — Server.unregister: case-insensitive name comparison ===
+
+tape('Server.unregister matches names case-insensitively', function (t) {
+  port(function (p) {
+    const bonjour = Bonjour({ ip: '127.0.0.1', port: p, multicast: false })
+    const server = bonjour._server
+    server.register({ name: 'Foo._TCP.local', type: 'PTR', ttl: 120, data: 'x' })
+    t.equal(server.registry.PTR.length, 1, 'precondition: registered')
+    server.unregister({ name: 'foo._tcp.LOCAL', type: 'PTR', ttl: 120, data: 'x' })
+    t.equal(server.registry.PTR.length, 0, 'removed despite different casing')
+    bonjour.destroy(function () { t.end() })
+  })
+})
+
+tape('Server.unregister leaves non-matching records intact', function (t) {
+  port(function (p) {
+    const bonjour = Bonjour({ ip: '127.0.0.1', port: p, multicast: false })
+    const server = bonjour._server
+    server.register([
+      { name: 'A._tcp.local', type: 'PTR', ttl: 120, data: 'a' },
+      { name: 'B._tcp.local', type: 'PTR', ttl: 120, data: 'b' }
+    ])
+    server.unregister({ name: 'a._TCP.LOCAL', type: 'PTR', ttl: 120, data: 'a' })
+    t.equal(server.registry.PTR.length, 1, 'one record left')
+    t.equal(server.registry.PTR[0].name, 'B._tcp.local', 'B was not removed')
+    bonjour.destroy(function () { t.end() })
+  })
+})
