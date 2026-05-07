@@ -83,3 +83,20 @@ tape('Browser supports the find(fn) shorthand (recurses with null opts)', functi
     bonjour.destroy(function () { t.end() })
   })
 })
+
+// === 5d21b57 — Service.stop() callback truly optional ===
+
+tape('Service.stop() does not throw when called without callback on inactive service', function (t) {
+  const s = new Service({ name: 'Foo', type: 'http', port: 3000 })
+  t.equal(s._activated, false, 'precondition: service is inactive')
+  t.doesNotThrow(function () { s.stop() })
+  t.end()
+})
+
+tape('Service.stop(cb) on inactive service still invokes the callback', function (t) {
+  const s = new Service({ name: 'Foo', type: 'http', port: 3000 })
+  s.stop(function () {
+    t.pass('callback fired')
+    t.end()
+  })
+})
