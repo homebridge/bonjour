@@ -8,6 +8,7 @@ All notable changes to `bonjour-hap` will be documented in this file. This proje
 - chore: dependency updates
 - fix(server): continue past unanswered questions in multi-question queries
 - fix(browser): handle null opts in constructor
+- fix(service): make stop() callback truly optional
 
 ## v3.10.2 (2026-05-04)
 
