@@ -337,3 +337,54 @@ tape('onAnnounceComplete bails out for destroyed services', function (t) {
   t.equal(s.published, false, 'destroyed service not marked published')
   t.end()
 })
+
+// === 7768312 — Browser: suppress no-op 'update' events when nothing changed ===
+
+const buildAnnouncePacket = function (txtBlocks) {
+  return {
+    answers: [
+      { type: 'PTR', name: '_test._tcp.local', ttl: 4500, data: 'X._test._tcp.local' },
+      { type: 'SRV', name: 'X._test._tcp.local', ttl: 120, data: { port: 3000, target: 'host.local' } },
+      { type: 'TXT', name: 'X._test._tcp.local', ttl: 4500, data: txtBlocks },
+      { type: 'A', name: 'host.local', ttl: 120, data: '10.0.0.1' }
+    ],
+    additionals: []
+  }
+}
+
+tape('Browser does not emit update for repeated identical announcements', function (t) {
+  port(function (p) {
+    const bonjour = Bonjour({ ip: '127.0.0.1', port: p, multicast: false })
+    const browser = bonjour.find({ type: 'test' })
+
+    let upCount = 0
+    let updateCount = 0
+    browser.on('up', function () { upCount++ })
+    browser.on('update', function () { updateCount++ })
+
+    browser._onresponse(buildAnnouncePacket([Buffer.from('a=1')]), { address: '127.0.0.1', port: 5353 })
+    // re-announce from a different referer — only the rinfo changes, not the service
+    browser._onresponse(buildAnnouncePacket([Buffer.from('a=1')]), { address: '127.0.0.2', port: 5353 })
+    browser._onresponse(buildAnnouncePacket([Buffer.from('a=1')]), { address: '127.0.0.3', port: 5353 })
+
+    t.equal(upCount, 1, 'up emitted once')
+    t.equal(updateCount, 0, "no 'update' for identical re-announces")
+    bonjour.destroy(function () { t.end() })
+  })
+})
+
+tape('Browser still emits update when user-visible TXT actually changes', function (t) {
+  port(function (p) {
+    const bonjour = Bonjour({ ip: '127.0.0.1', port: p, multicast: false })
+    const browser = bonjour.find({ type: 'test' })
+
+    let updateCount = 0
+    browser.on('update', function () { updateCount++ })
+
+    browser._onresponse(buildAnnouncePacket([Buffer.from('a=1')]), { address: '127.0.0.1', port: 5353 })
+    browser._onresponse(buildAnnouncePacket([Buffer.from('a=2')]), { address: '127.0.0.1', port: 5353 })
+
+    t.equal(updateCount, 1, 'update fires once when TXT changed')
+    bonjour.destroy(function () { t.end() })
+  })
+})
