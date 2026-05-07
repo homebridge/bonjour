@@ -228,3 +228,67 @@ tape('Prober.start() unrefs the initial jitter timer', function (t) {
   t.equal(firstFake.hasRef(), false, "jitter timer is unref'd so it does not block process exit")
   t.end()
 })
+
+// === 025e0cd — Service: restore exponential re-announce backoff ===
+
+tape('Service re-announce delay accumulates 3x across timer firings', function (t) {
+  const s = new Service({ name: 'Foo', type: 'http', port: 3000 })
+  s._activated = true
+  s.packet = s._records()
+
+  const realSetTimeout = global.setTimeout
+  const scheduled = []
+  global.setTimeout = function (fn, delay) {
+    scheduled.push({ fn, delay })
+    return { unref: function () { return this } }
+  }
+
+  let pendingCb
+  s.on('service-announce-request', function (pkt, silent, cb) { pendingCb = cb })
+
+  s.announce()
+  pendingCb()
+  t.equal(scheduled[0].delay, 3000, 'first re-announce scheduled at 3 s')
+
+  scheduled[0].fn()
+  pendingCb()
+  t.equal(scheduled[1].delay, 9000, 'second re-announce at 9 s (multiplier accumulated, not reset)')
+
+  scheduled[1].fn()
+  pendingCb()
+  t.equal(scheduled[2].delay, 27000, 'third re-announce at 27 s')
+
+  global.setTimeout = realSetTimeout
+  s._destroyed = true
+  t.end()
+})
+
+tape('Service.announce() (public entry) resets delay back to 1 s', function (t) {
+  const s = new Service({ name: 'Foo', type: 'http', port: 3000 })
+  s._activated = true
+  s.packet = s._records()
+
+  const realSetTimeout = global.setTimeout
+  const scheduled = []
+  global.setTimeout = function (fn, delay) {
+    scheduled.push({ fn, delay })
+    return { unref: function () { return this } }
+  }
+
+  let pendingCb
+  s.on('service-announce-request', function (pkt, silent, cb) { pendingCb = cb })
+
+  s.announce()
+  pendingCb()
+  scheduled[0].fn()
+  pendingCb()
+  t.equal(scheduled[1].delay, 9000, 'walked the timer chain to 9 s')
+
+  s.announce()
+  pendingCb()
+  t.equal(scheduled[2].delay, 3000, 'public announce() reset delay back to 1 s')
+
+  global.setTimeout = realSetTimeout
+  s._destroyed = true
+  t.end()
+})
