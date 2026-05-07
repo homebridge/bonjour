@@ -459,3 +459,68 @@ tape('mdns.respond callback error does not raise uncaughtException', function (t
     }, 50)
   })
 })
+
+// === ab7d952 — meta-enumeration PTR included in goodbye records ===
+
+tape('goodbye includes meta-enum PTR for addUnsafeServiceEnumerationRecord services', function (t) {
+  port(function (p) {
+    const bonjour = Bonjour({ ip: '127.0.0.1', port: p, multicast: false })
+
+    const respondCalls = []
+    const orig = bonjour._server.mdns.respond.bind(bonjour._server.mdns)
+    bonjour._server.mdns.respond = function (records) {
+      respondCalls.push(records)
+      return orig.apply(null, arguments)
+    }
+
+    const service = bonjour.publish({
+      name: 'MetaTest',
+      type: 'meta',
+      port: 3000,
+      probe: false,
+      addUnsafeServiceEnumerationRecord: true
+    })
+
+    service.on('up', function () {
+      const announceCount = respondCalls.length
+      service.stop(function () {
+        const newCalls = respondCalls.slice(announceCount)
+        const allRecords = newCalls.flatMap(function (rs) { return Array.isArray(rs) ? rs : [rs] })
+        const metaGoodbye = allRecords.filter(function (r) {
+          return r.name === '_services._dns-sd._udp.local' && r.type === 'PTR' && r.ttl === 0
+        })
+        t.ok(metaGoodbye.length > 0, 'meta-enum PTR included in goodbye records')
+        t.equal(metaGoodbye[0].data, '_meta._tcp.local')
+        bonjour.destroy(function () { t.end() })
+      })
+    })
+  })
+})
+
+tape('goodbye for a non-meta service does not emit a meta-enum PTR', function (t) {
+  port(function (p) {
+    const bonjour = Bonjour({ ip: '127.0.0.1', port: p, multicast: false })
+
+    const respondCalls = []
+    const orig = bonjour._server.mdns.respond.bind(bonjour._server.mdns)
+    bonjour._server.mdns.respond = function (records) {
+      respondCalls.push(records)
+      return orig.apply(null, arguments)
+    }
+
+    const service = bonjour.publish({ name: 'NoMeta', type: 'plain', port: 3000, probe: false })
+
+    service.on('up', function () {
+      const announceCount = respondCalls.length
+      service.stop(function () {
+        const newCalls = respondCalls.slice(announceCount)
+        const allRecords = newCalls.flatMap(function (rs) { return Array.isArray(rs) ? rs : [rs] })
+        const metaGoodbye = allRecords.filter(function (r) {
+          return r.name === '_services._dns-sd._udp.local' && r.type === 'PTR'
+        })
+        t.equal(metaGoodbye.length, 0, 'no meta-enum PTR when service did not advertise one')
+        bonjour.destroy(function () { t.end() })
+      })
+    })
+  })
+})
