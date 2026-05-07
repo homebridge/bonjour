@@ -6,6 +6,7 @@ All notable changes to `bonjour-hap` will be documented in this file. This proje
 
 - fix(types): align `index.d.ts` with runtime
 - chore: dependency updates
+- fix(server): continue past unanswered questions in multi-question queries
 
 ## v3.10.2 (2026-05-04)
 
