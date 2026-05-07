@@ -33,9 +33,11 @@ Bonjour.prototype = {
     return browser
   },
 
-  destroy: function () {
-    this._registry.destroy()
-    this._server.mdns.destroy()
+  destroy: function (cb) {
+    this._registry.destroy(() => {
+      this._server.mdns.destroy()
+      if (cb) cb()
+    })
   }
 }
 
