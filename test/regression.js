@@ -198,3 +198,33 @@ tape('Browser wildcard still queries for distinct service types', function (t) {
     bonjour.destroy(function () { t.end() })
   })
 })
+
+// === c0fc44d — Prober: unref the initial probe-jitter timer ===
+
+tape('Prober.start() unrefs the initial jitter timer', function (t) {
+  const realSetTimeout = global.setTimeout
+  let firstFake = null
+  global.setTimeout = function (fn, delay) {
+    if (firstFake === null) {
+      let refed = true
+      firstFake = {
+        unref: function () { refed = false; return this },
+        ref: function () { refed = true; return this },
+        hasRef: function () { return refed }
+      }
+      return firstFake
+    }
+    return realSetTimeout(fn, delay)
+  }
+
+  const fakeMdns = { on: function () {}, query: function () {}, removeListener: function () {} }
+  const fakeService = { _activated: true, _destroyed: false, fqdn: 'foo._tcp.local' }
+  const prober = new Prober(fakeMdns, fakeService, function () {})
+  prober.start()
+
+  global.setTimeout = realSetTimeout
+
+  t.ok(firstFake, 'jitter timer was scheduled')
+  t.equal(firstFake.hasRef(), false, "jitter timer is unref'd so it does not block process exit")
+  t.end()
+})
