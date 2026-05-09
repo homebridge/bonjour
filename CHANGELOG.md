@@ -20,6 +20,7 @@ All notable changes to `bonjour-hap` will be documented in this file. This proje
 - fix(server): warn instead of crash when mdns respond fails
 - fix(service): include meta-enumeration PTR in goodbye records
 - fix: surface mdns errors via Bonjour 'error' event
+- chore(ci): bump release workflow action versions
 
 ## v3.10.2 (2026-05-04)
 
