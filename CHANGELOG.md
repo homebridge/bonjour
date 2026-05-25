@@ -2,7 +2,9 @@
 
 All notable changes to `bonjour-hap` will be documented in this file. This project tries to adhere to [Semantic Versioning](http://semver.org/).
 
-## v3.10.3 (Pending Release)
+## v3.10.3 (2026-05-25)
+
+### Changes
 
 - fix(types): align `index.d.ts` with runtime
 - chore: dependency updates
