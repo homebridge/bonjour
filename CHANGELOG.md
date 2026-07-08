@@ -7,6 +7,7 @@ All notable changes to `bonjour-hap` will be documented in this file. This proje
 ### Changes
 
 - chore: dependency updates
+- chore: update `actions/checkout` to `v7`
 
 ## v3.10.3 (2026-05-25)
 
