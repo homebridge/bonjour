@@ -8,6 +8,7 @@ All notable changes to `bonjour-hap` will be documented in this file. This proje
 
 - chore: dependency updates
 - chore: update `actions/checkout` to `v7`
+- chore: added `deprecate-past-pre-releases` workflow
 
 ## v3.10.3 (2026-05-25)
 
