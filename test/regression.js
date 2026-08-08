@@ -160,6 +160,27 @@ tape('Server.unregister keeps other services sharing a record name', function (t
   })
 })
 
+tape('Prober detaches its response listener when the service stops first', function (t) {
+  const Prober = require('../lib/Prober.js')
+  const EventEmitter = require('events').EventEmitter
+
+  const mdns = new EventEmitter()
+  mdns.query = function () { t.fail('should not have queried for a stopped service') }
+
+  // stopped during the 0-250ms probe jitter, which is the window start() opens
+  const service = { fqdn: 'Gone._hap._tcp.local', _activated: false, _destroyed: false }
+  const prober = new Prober(mdns, service, function () {
+    t.fail('the callback must not fire for a stopped service')
+  })
+
+  prober.start()
+  t.equal(mdns.listenerCount('response'), 1, 'precondition: listener attached')
+
+  prober.try()
+  t.equal(mdns.listenerCount('response'), 0, 'listener detached rather than leaked')
+  t.end()
+})
+
 tape('Browser re-adds a service after a goodbye with different casing', function (t) {
   const Browser = require('../lib/Browser.js')
   const browser = Object.create(Browser.prototype)
