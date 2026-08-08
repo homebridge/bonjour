@@ -7,6 +7,7 @@ All notable changes to `bonjour-hap` will be documented in this file. This proje
 ### Changes
 
 - fix(server): unregister a record by its data too, not just its name
+- fix(browser): drop the cached fqdn key that was actually inserted
 
 ## v3.10.4 (2026-07-08)
 
