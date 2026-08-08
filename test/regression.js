@@ -5,6 +5,7 @@ const tape = require('tape')
 const Bonjour = require('../')
 const Service = require('../lib/Service.js')
 const Prober = require('../lib/Prober.js')
+const helpers = require('../lib/helpers.js')
 
 const port = function (cb) {
   const s = dgram.createSocket('udp4')
@@ -126,6 +127,35 @@ tape('Server.unregister leaves non-matching records intact', function (t) {
     server.unregister({ name: 'a._TCP.LOCAL', type: 'PTR', ttl: 120, data: 'a' })
     t.equal(server.registry.PTR.length, 1, 'one record left')
     t.equal(server.registry.PTR[0].name, 'B._tcp.local', 'B was not removed')
+    bonjour.destroy(function () { t.end() })
+  })
+})
+
+tape('Server.unregister keeps other services sharing a record name', function (t) {
+  port(function (p) {
+    const bonjour = Bonjour({ ip: '127.0.0.1', port: p, multicast: false })
+    const server = bonjour._server
+
+    // Two services of the same type share the type PTR name, and every service on
+    // the host shares the A record name. Removing by name alone took the sibling
+    // records down too, so unpublishing one bridge made the other undiscoverable
+    // until its own re-announce - a back-off that reaches an hour.
+    server.register([
+      { name: '_hap._tcp.local', type: 'PTR', ttl: 4500, data: 'Bridge A._hap._tcp.local' },
+      { name: '_hap._tcp.local', type: 'PTR', ttl: 4500, data: 'Bridge B._hap._tcp.local' },
+      { name: 'myhost.local', type: 'A', ttl: 120, data: '192.168.1.10' },
+      { name: 'myhost.local', type: 'A', ttl: 120, data: '10.0.0.5' }
+    ])
+
+    // goodbye records for Bridge A only, with ttl zeroed the way _tearDown does it
+    server.unregister([
+      { name: '_hap._tcp.local', type: 'PTR', ttl: 0, data: 'Bridge A._hap._tcp.local' },
+      { name: 'MYHOST.LOCAL', type: 'A', ttl: 0, data: '192.168.1.10' }
+    ])
+
+    t.deepEqual(server.registry.PTR.map(r => r.data), ['Bridge B._hap._tcp.local'], 'Bridge B PTR survived')
+    t.deepEqual(server.registry.A.map(r => r.data), ['10.0.0.5'], 'the other address record survived')
+
     bonjour.destroy(function () { t.end() })
   })
 })
@@ -563,5 +593,91 @@ tape('Bonjour forwards underlying mdns socket errors via the error event', funct
       t.equal(received.message, 'socket boom')
       bonjour.destroy(function () { t.end() })
     })
+  })
+})
+
+// === Registry._tearDown: shared A/AAAA records survive a sibling unpublishing ===
+
+tape('unpublishing one service keeps the address records its siblings share', function (t) {
+  port(function (p) {
+    const bonjour = Bonjour({ ip: '127.0.0.1', port: p, multicast: false })
+    const server = bonjour._server
+
+    // Two services on ONE host, so both contribute identical A records. The
+    // registry stores a single copy, which is exactly why removing "this
+    // service's" copy used to take the other service's addresses with it.
+    const one = bonjour.publish({ name: 'One', type: 'test', port: 3000, probe: false })
+    const two = bonjour.publish({ name: 'Two', type: 'test', port: 3001, probe: false })
+
+    setTimeout(function () {
+      const addressesFor = function (service) {
+        return service._records().filter(function (r) { return r.type === 'A' || r.type === 'AAAA' })
+      }
+      const shared = addressesFor(two)
+      t.ok(shared.length > 0, 'precondition: the surviving service has address records')
+
+      const goodbyes = []
+      const respond = server.mdns.respond.bind(server.mdns)
+      server.mdns.respond = function (packet, cb) {
+        const records = Array.isArray(packet) ? packet : (packet.answers || [])
+        records.forEach(function (r) { if (r.ttl === 0) goodbyes.push(r) })
+        return respond(packet, cb)
+      }
+
+      one.stop(function () {
+        const survives = function (record) {
+          return (server.registry[record.type] || []).some(helpers.isSameRecord(record))
+        }
+
+        t.ok(shared.every(survives), 'the surviving service still has its address records registered')
+        t.notOk(
+          goodbyes.some(function (g) { return shared.some(helpers.isSameRecord(g)) }),
+          'no goodbye was sent for an address the surviving service still uses'
+        )
+
+        // The service that stopped must still have withdrawn its own unique records
+        t.ok(goodbyes.some(function (g) { return g.type === 'SRV' }), 'its own SRV was withdrawn')
+
+        server.mdns.respond = respond
+        bonjour.destroy(function () { t.end() })
+      })
+    }, 100)
+  })
+})
+
+// === Server.register / unregister: one definition of "the same record" ===
+
+tape('register treats names case-insensitively, as unregister does', function (t) {
+  port(function (p) {
+    const bonjour = Bonjour({ ip: '127.0.0.1', port: p, multicast: false })
+    const server = bonjour._server
+
+    // DNS compares names case-insensitively, so these are one record, not two.
+    // Registering exactly but unregistering case-insensitively is how the two
+    // sides drift apart: two entries go in and a single unregister takes both.
+    server.register({ name: 'Foo.local', type: 'A', ttl: 120, data: '1.2.3.4' })
+    server.register({ name: 'foo.LOCAL', type: 'A', ttl: 120, data: '1.2.3.4' })
+
+    t.equal(server.registry.A.length, 1, 'stored once, not twice')
+
+    server.unregister({ name: 'FOO.local', type: 'A', ttl: 120, data: '1.2.3.4' })
+    t.equal(server.registry.A.length, 0, 'and removed by any casing')
+
+    bonjour.destroy(function () { t.end() })
+  })
+})
+
+tape('register still keeps records that differ only in their data', function (t) {
+  port(function (p) {
+    const bonjour = Bonjour({ ip: '127.0.0.1', port: p, multicast: false })
+    const server = bonjour._server
+
+    // Same name, different address: a dual-homed host, and both are real records
+    server.register({ name: 'foo.local', type: 'A', ttl: 120, data: '1.2.3.4' })
+    server.register({ name: 'foo.local', type: 'A', ttl: 120, data: '5.6.7.8' })
+
+    t.equal(server.registry.A.length, 2, 'both kept')
+
+    bonjour.destroy(function () { t.end() })
   })
 })

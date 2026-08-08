@@ -2,6 +2,12 @@
 
 All notable changes to `bonjour-hap` will be documented in this file. This project tries to adhere to [Semantic Versioning](http://semver.org/).
 
+## v3.10.5 (Pending Release)
+
+### Changes
+
+- fix(server): stop one service unpublishing from withdrawing another's records
+
 ## v3.10.4 (2026-07-08)
 
 ### Changes
