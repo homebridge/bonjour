@@ -130,6 +130,35 @@ tape('Server.unregister leaves non-matching records intact', function (t) {
   })
 })
 
+tape('Server.unregister keeps other services sharing a record name', function (t) {
+  port(function (p) {
+    const bonjour = Bonjour({ ip: '127.0.0.1', port: p, multicast: false })
+    const server = bonjour._server
+
+    // Two services of the same type share the type PTR name, and every service on
+    // the host shares the A record name. Removing by name alone took the sibling
+    // records down too, so unpublishing one bridge made the other undiscoverable
+    // until its own re-announce - a back-off that reaches an hour.
+    server.register([
+      { name: '_hap._tcp.local', type: 'PTR', ttl: 4500, data: 'Bridge A._hap._tcp.local' },
+      { name: '_hap._tcp.local', type: 'PTR', ttl: 4500, data: 'Bridge B._hap._tcp.local' },
+      { name: 'myhost.local', type: 'A', ttl: 120, data: '192.168.1.10' },
+      { name: 'myhost.local', type: 'A', ttl: 120, data: '10.0.0.5' }
+    ])
+
+    // goodbye records for Bridge A only, with ttl zeroed the way _tearDown does it
+    server.unregister([
+      { name: '_hap._tcp.local', type: 'PTR', ttl: 0, data: 'Bridge A._hap._tcp.local' },
+      { name: 'MYHOST.LOCAL', type: 'A', ttl: 0, data: '192.168.1.10' }
+    ])
+
+    t.deepEqual(server.registry.PTR.map(r => r.data), ['Bridge B._hap._tcp.local'], 'Bridge B PTR survived')
+    t.deepEqual(server.registry.A.map(r => r.data), ['10.0.0.5'], 'the other address record survived')
+
+    bonjour.destroy(function () { t.end() })
+  })
+})
+
 // === 8d8d9aa — Browser: wildcard meta-PTR name comparison is case-insensitive ===
 
 tape('Browser wildcard accepts a meta-enumeration PTR with mixed-case name', function (t) {

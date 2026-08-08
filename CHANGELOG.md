@@ -2,6 +2,12 @@
 
 All notable changes to `bonjour-hap` will be documented in this file. This project tries to adhere to [Semantic Versioning](http://semver.org/).
 
+## v3.10.5 (Pending Release)
+
+### Changes
+
+- fix(server): unregister a record by its data too, not just its name
+
 ## v3.10.4 (2026-07-08)
 
 ### Changes
