@@ -8,6 +8,7 @@ All notable changes to `bonjour-hap` will be documented in this file. This proje
 
 - fix(server): stop one service unpublishing from withdrawing another's records
 - fix(browser): drop the cached fqdn key that was actually inserted
+- fix(prober): detach the response listener when the service stops first
 
 ## v3.10.4 (2026-07-08)
 
