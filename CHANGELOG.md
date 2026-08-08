@@ -7,6 +7,7 @@ All notable changes to `bonjour-hap` will be documented in this file. This proje
 ### Changes
 
 - fix(server): stop one service unpublishing from withdrawing another's records
+- fix(browser): drop the cached fqdn key that was actually inserted
 
 ## v3.10.4 (2026-07-08)
 
