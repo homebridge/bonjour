@@ -160,6 +160,34 @@ tape('Server.unregister keeps other services sharing a record name', function (t
   })
 })
 
+tape('Browser re-adds a service after a goodbye with different casing', function (t) {
+  const Browser = require('../lib/Browser.js')
+  const browser = Object.create(Browser.prototype)
+  require('events').EventEmitter.call(browser)
+  browser.services = []
+  browser._serviceMap = {}
+
+  browser._addService({ fqdn: 'Bridge A._hap._tcp.local' })
+  browser._removeService('bridge a._HAP._tcp.LOCAL')
+
+  t.equal(browser.services.length, 0, 'the goodbye removed it from the list')
+  t.deepEqual(Object.keys(browser._serviceMap), [], 'and left no stale cache key behind')
+
+  // the service comes back - it must be treated as new, not as a cached update
+  let ups = 0
+  browser.on('up', function () { ups++ })
+  const returning = { fqdn: 'Bridge A._hap._tcp.local' }
+  if (browser._serviceMap[returning.fqdn]) {
+    browser._updateService(returning)
+  } else {
+    browser._addService(returning)
+  }
+
+  t.equal(ups, 1, "'up' fired again for the returning service")
+  t.equal(browser.services.length, 1, 'and it is back in the list')
+  t.end()
+})
+
 // === 8d8d9aa — Browser: wildcard meta-PTR name comparison is case-insensitive ===
 
 tape('Browser wildcard accepts a meta-enumeration PTR with mixed-case name', function (t) {
