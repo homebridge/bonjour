@@ -17,6 +17,7 @@ All notable changes to `bonjour-hap` will be documented in this file. This proje
 - fix(service): stop a TXT update firing up again, as if the service had just started
 - perf(server): leave out answers the querier already holds (known-answer suppression)
 - perf(browser): build each packet's record list once, not again for every browsed name
+- fix(service): announce the host's new address when it changes, not the old one until a restart
 
 ## v3.10.5 (2026-08-15)
 

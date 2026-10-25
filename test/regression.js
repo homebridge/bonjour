@@ -1035,3 +1035,71 @@ tape('Server still sends an answer the querier holds with under half its lifetim
     bonjour.destroy(function () { t.end() })
   })
 })
+
+// === A change of the host's address is announced, not left stale until a restart ===
+
+const withAddress = function (address, fn) {
+  const os = require('os')
+  const real = os.networkInterfaces
+  os.networkInterfaces = function () {
+    return { en0: [{ address, family: 'IPv4', internal: false }] }
+  }
+  try {
+    return fn()
+  } finally {
+    os.networkInterfaces = real
+  }
+}
+
+const watchedService = function (t, cb) {
+  const Registry = require('../lib/Registry.js')
+  const server = clashNetwork()
+  server.unregistered = []
+  server.unregister = function (records) { server.unregistered.push(records) }
+  keepAlive(t)
+  const service = withAddress('192.168.1.5', function () {
+    return new Registry(server).publish({ name: 'Mover', type: 'hap', port: 51826, host: 'me.local', probe: false })
+  })
+  service.once('up', function () { cb(service, server) })
+}
+
+const announcedAddresses = function (server) {
+  return server.mdns.sent
+    .filter(function (s) { return s.respond })
+    .map(function (s) { return s.respond.filter(function (r) { return r.type === 'A' }).map(function (r) { return r.data }) })
+}
+
+tape('Service announces its new address when the host\'s address changes', function (t) {
+  watchedService(t, function (service, server) {
+    withAddress('192.168.1.77', function () { service._checkAddresses() })
+
+    setImmediate(function () {
+      const announced = announcedAddresses(server)
+      t.deepEqual(announced[announced.length - 1], ['192.168.1.77'], 'the new address went out')
+      t.ok(server.unregistered.some(function (records) { return records.some(function (r) { return r.data === '192.168.1.5' }) }), 'the old address is no longer answered for')
+      t.ok(service.packet.some(function (r) { return r.type === 'A' && r.flush }), 'with the cache-flush bit, so listeners drop the old one')
+      service.stop()
+      t.end()
+    })
+  })
+})
+
+tape('Service announces nothing extra while its address stays the same', function (t) {
+  watchedService(t, function (service, server) {
+    const before = server.mdns.sent.length
+    withAddress('192.168.1.5', function () { service._checkAddresses() })
+    t.equal(server.mdns.sent.length, before)
+    service.stop()
+    t.end()
+  })
+})
+
+tape('Service stops watching its address once stopped', function (t) {
+  watchedService(t, function (service) {
+    t.ok(service._addressTimer, 'watching while published')
+    service.stop(function () {
+      t.equal(service._addressTimer, undefined, 'and not after')
+      t.end()
+    })
+  })
+})
