@@ -16,6 +16,7 @@ All notable changes to `bonjour-hap` will be documented in this file. This proje
 - feat(browser): drop services that vanish without a goodbye, and apply TXT or SRV sent alone
 - fix(service): stop a TXT update firing up again, as if the service had just started
 - perf(server): leave out answers the querier already holds (known-answer suppression)
+- perf(browser): build each packet's record list once, not again for every browsed name
 
 ## v3.10.5 (2026-08-15)
 
