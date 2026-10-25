@@ -40,7 +40,7 @@ tape('Server still answers later questions when an earlier one has no records', 
   })
 })
 
-tape('Server answers each question independently in multi-question packets', function (t) {
+tape('Server answers every question of a multi-question query, in one packet', function (t) {
   port(function (p) {
     const bonjour = Bonjour({ ip: '127.0.0.1', port: p, multicast: false })
     const server = bonjour._server
@@ -59,9 +59,65 @@ tape('Server answers each question independently in multi-question packets', fun
       ]
     })
 
-    t.equal(responses.length, 2, 'one response per matched question')
-    t.equal(responses[0].answers[0].name, 'A._tcp.local')
-    t.equal(responses[1].answers[0].name, 'B._tcp.local')
+    t.equal(responses.length, 1, 'one packet, not one per question')
+    t.deepEqual(responses[0].answers.map(function (r) { return r.name }), ['A._tcp.local', 'B._tcp.local'], 'both questions answered')
+    bonjour.destroy(function () { t.end() })
+  })
+})
+
+tape('Server sends each record once when two questions share it', function (t) {
+  port(function (p) {
+    const bonjour = Bonjour({ ip: '127.0.0.1', port: p, multicast: false })
+    const server = bonjour._server
+    server.register([
+      { name: '_hap._tcp.local', type: 'PTR', ttl: 4500, data: 'Bridge._hap._tcp.local' },
+      { name: 'Bridge._hap._tcp.local', type: 'SRV', ttl: 120, data: { port: 51826, target: 'host.local' } },
+      { name: 'host.local', type: 'A', ttl: 120, data: '192.168.1.5' }
+    ])
+
+    const responses = []
+    server.mdns.respond = function (pkt) { responses.push(pkt) }
+
+    // The PTR answer pulls the SRV and A in as additionals; the second question
+    // asks for the A record outright
+    server._respondToQuery({
+      questions: [
+        { name: '_hap._tcp.local', type: 'PTR' },
+        { name: 'host.local', type: 'A' }
+      ]
+    })
+
+    t.equal(responses.length, 1)
+    const all = responses[0].answers.concat(responses[0].additionals)
+    t.equal(all.filter(function (r) { return r.type === 'A' }).length, 1, 'the A record appears once')
+    t.ok(responses[0].answers.some(function (r) { return r.type === 'A' }), 'as an answer, since it was asked for')
+    bonjour.destroy(function () { t.end() })
+  })
+})
+
+tape('Server falls back to one packet per question when combined would not fit', function (t) {
+  port(function (p) {
+    const bonjour = Bonjour({ ip: '127.0.0.1', port: p, multicast: false })
+    const server = bonjour._server
+    const big = 'x'.repeat(250)
+    const records = []
+    for (let i = 0; i < 4; i++) {
+      records.push({ name: 'A._tcp.local', type: 'TXT', ttl: 120, data: [big + i] })
+      records.push({ name: 'B._tcp.local', type: 'TXT', ttl: 120, data: [big + i] })
+    }
+    server.register(records)
+
+    const responses = []
+    server.mdns.respond = function (pkt) { responses.push(pkt) }
+
+    server._respondToQuery({
+      questions: [
+        { name: 'A._tcp.local', type: 'TXT' },
+        { name: 'B._tcp.local', type: 'TXT' }
+      ]
+    })
+
+    t.equal(responses.length, 2, 'the two replies are sent separately, as before')
     bonjour.destroy(function () { t.end() })
   })
 })
