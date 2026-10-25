@@ -882,3 +882,78 @@ tape('Registry still says goodbye for a service it announced', function (t) {
     })
   })
 })
+
+// === One-shot (legacy unicast) lookups get a reply sent straight back to them ===
+
+tape('Server replies to a one-shot lookup by unicast, as a normal DNS answer', function (t) {
+  port(function (p) {
+    const bonjour = Bonjour({ ip: '127.0.0.1', port: p, multicast: false })
+    const server = bonjour._server
+    const record = { name: 'host.local', type: 'A', ttl: 120, flush: true, data: '192.168.1.5' }
+    server.register(record)
+
+    const sent = []
+    server.mdns.respond = function (pkt, rinfo) { sent.push({ pkt, rinfo }) }
+
+    const query = { id: 4242, questions: [{ name: 'host.local', type: 'A' }] }
+    server._respondToQuery(query, { address: '192.168.1.99', port: 40000 })
+
+    t.equal(sent.length, 1)
+    t.deepEqual(sent[0].rinfo, { address: '192.168.1.99', port: 40000 }, 'sent to the asker, not multicast')
+    t.equal(sent[0].pkt.id, 4242, 'echoes the query id')
+    t.deepEqual(sent[0].pkt.questions, query.questions, 'repeats the question')
+    t.equal(sent[0].pkt.answers[0].ttl, 10, 'records live at most 10 seconds')
+    t.equal(sent[0].pkt.answers[0].flush, false, 'without the cache-flush bit')
+    t.equal(record.ttl, 120, 'the registered record itself is untouched')
+    bonjour.destroy(function () { t.end() })
+  })
+})
+
+tape('Server still multicasts its reply to a query from the mDNS port', function (t) {
+  port(function (p) {
+    const bonjour = Bonjour({ ip: '127.0.0.1', port: p, multicast: false })
+    const server = bonjour._server
+    server.register({ name: 'host.local', type: 'A', ttl: 120, flush: true, data: '192.168.1.5' })
+
+    const sent = []
+    server.mdns.respond = function (pkt, rinfo) { sent.push({ pkt, rinfo }) }
+
+    server._respondToQuery({ id: 0, questions: [{ name: 'host.local', type: 'A' }] }, { address: '192.168.1.99', port: p })
+
+    t.equal(sent.length, 1)
+    t.equal(typeof sent[0].rinfo, 'function', 'no address given, so it goes to the multicast group')
+    t.equal(sent[0].pkt.answers[0].ttl, 120)
+    bonjour.destroy(function () { t.end() })
+  })
+})
+
+tape('A plain DNS client on another port gets an answer back', function (t) {
+  const dnsPacket = require('dns-packet')
+  port(function (p) {
+    const bonjour = Bonjour({ ip: '127.0.0.1', port: p, multicast: false })
+    bonjour._server.register({ name: 'host.local', type: 'A', ttl: 120, flush: true, data: '192.168.1.5' })
+
+    const client = dgram.createSocket('udp4')
+    const timer = setTimeout(function () {
+      t.fail('no reply reached the client')
+      client.close()
+      bonjour.destroy(function () { t.end() })
+    }, 2000)
+
+    client.on('message', function (msg) {
+      clearTimeout(timer)
+      const reply = dnsPacket.decode(msg)
+      t.equal(reply.id, 777, 'the reply matches the query')
+      t.deepEqual(reply.answers.map(function (a) { return a.data }), ['192.168.1.5'])
+      t.equal(reply.answers[0].ttl, 10)
+      client.close()
+      bonjour.destroy(function () { t.end() })
+    })
+
+    client.bind(0, '127.0.0.1', function () {
+      const query = dnsPacket.encode({ type: 'query', id: 777, questions: [{ name: 'host.local', type: 'A' }] })
+      // give the responder's socket a moment to bind before asking
+      setTimeout(function () { client.send(query, p, '127.0.0.1') }, 100)
+    })
+  })
+})
