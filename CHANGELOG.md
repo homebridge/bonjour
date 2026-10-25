@@ -18,6 +18,7 @@ All notable changes to `bonjour-hap` will be documented in this file. This proje
 - perf(server): leave out answers the querier already holds (known-answer suppression)
 - perf(browser): build each packet's record list once, not again for every browsed name
 - fix(service): announce the host's new address when it changes, not the old one until a restart
+- fix(types): describe the CommonJS export, so ES module consumers can call it
 
 ## v3.10.5 (2026-08-15)
 
