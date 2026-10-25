@@ -101,3 +101,58 @@ test('_records() - everything', function (t) {
   ]))
   t.end()
 })
+
+// A service bound to particular addresses must advertise exactly those. The check
+// was inverted, so binding to an IP advertised every OTHER address on the interface
+const withInterfaces = function (interfaces, fn) {
+  const real = os.networkInterfaces
+  os.networkInterfaces = function () { return interfaces }
+  try {
+    fn()
+  } finally {
+    os.networkInterfaces = real
+  }
+}
+
+const fakeInterfaces = {
+  lo0: [{ address: '127.0.0.1', family: 'IPv4', internal: true }],
+  en0: [
+    { address: '192.168.1.5', family: 'IPv4', internal: false },
+    { address: 'fe80::1', family: 'IPv6', internal: false },
+    { address: 'fd00::5', family: 'IPv6', internal: false }
+  ],
+  en1: [{ address: '10.0.0.9', family: 'IPv4', internal: false }]
+}
+
+const advertised = function (opts) {
+  const service = new Service(Object.assign({ name: 'Foo Bar', type: 'http', port: 3000, host: 'example.local' }, opts))
+  return service._addressRecords().map(function (record) { return record.data })
+}
+
+test('_addressRecords() - restricted to an address advertises only that address', function (t) {
+  withInterfaces(fakeInterfaces, function () {
+    t.deepEqual(advertised({ restrictedAddresses: ['192.168.1.5'] }), ['192.168.1.5'])
+  })
+  t.end()
+})
+
+test('_addressRecords() - restricted to two addresses on one interface advertises both', function (t) {
+  withInterfaces(fakeInterfaces, function () {
+    t.deepEqual(advertised({ restrictedAddresses: ['192.168.1.5', 'fd00::5'] }), ['192.168.1.5', 'fd00::5'])
+  })
+  t.end()
+})
+
+test('_addressRecords() - restricted to an interface advertises all of its addresses', function (t) {
+  withInterfaces(fakeInterfaces, function () {
+    t.deepEqual(advertised({ restrictedAddresses: ['en0'] }), ['192.168.1.5', 'fe80::1', 'fd00::5'])
+  })
+  t.end()
+})
+
+test('_addressRecords() - unrestricted advertises every external address', function (t) {
+  withInterfaces(fakeInterfaces, function () {
+    t.deepEqual(advertised({}), ['192.168.1.5', 'fe80::1', 'fd00::5', '10.0.0.9'])
+  })
+  t.end()
+})

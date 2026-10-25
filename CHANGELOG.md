@@ -9,6 +9,7 @@ All notable changes to `bonjour-hap` will be documented in this file. This proje
 - ci: update github actions to their latest versions (#38)
 - chore(deps): dependency updates
 - fix(browser): remember addresses across packets, so services on a busy host get theirs (#33) (@NorthernMan54)
+- fix(service): advertise the address a service is bound to, not every other one
 
 ## v3.10.5 (2026-08-15)
 
