@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "esModuleInterop": true,
+    "strict": true,
+    "noEmit": true,
+    "types": ["node"],
+    "paths": { "bonjour-hap": ["../../../index.d.ts"] }
+  },
+  "files": ["consumer.ts"]
+}
