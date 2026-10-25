@@ -152,7 +152,9 @@ Emitted when the service is up, and if the txt record of the service is updated 
 
 #### `Event: error`
 
-Emitted if an error occurrs while publishing the service.
+Emitted if an error occurs while publishing the service, e.g. when its name is
+already in use on the network. With no listener attached, the error is logged
+with `console.warn` instead of being thrown.
 
 #### `service.stop([callback])`
 

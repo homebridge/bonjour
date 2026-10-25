@@ -10,6 +10,7 @@ All notable changes to `bonjour-hap` will be documented in this file. This proje
 - chore(deps): dependency updates
 - fix(browser): remember addresses across packets, so services on a busy host get theirs (#33) (@NorthernMan54)
 - fix(service): advertise the address a service is bound to, not every other one
+- fix(registry): no goodbye for another device's name, and warn rather than crash on a clash
 
 ## v3.10.5 (2026-08-15)
 
