@@ -13,6 +13,7 @@ All notable changes to `bonjour-hap` will be documented in this file. This proje
 - fix(registry): no goodbye for another device's name, and warn rather than crash on a clash
 - fix(server): answer all of a query's questions in one packet
 - feat(server): reply to one-shot lookups by unicast, so plain DNS clients get an answer
+- feat(browser): drop services that vanish without a goodbye, and apply TXT or SRV sent alone
 
 ## v3.10.5 (2026-08-15)
 

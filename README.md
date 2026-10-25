@@ -122,11 +122,14 @@ Emitted every time a new service is found that matches the browser.
 
 #### `Event: update`
 
-Emitted every time an update is received for existing service is found that matches the browser.
+Emitted every time an update is received for an existing service that matches the
+browser, including a TXT or SRV record announced on its own.
 
 #### `Event: down`
 
-Emitted every time an existing service emmits a goodbye message.
+Emitted every time an existing service emits a goodbye message, or stops
+answering: the browser asks for it again as its record nears expiry, and
+reports it down if nothing answers before it expires.
 
 #### `browser.services`
 
