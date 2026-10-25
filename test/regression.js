@@ -979,3 +979,59 @@ tape('Service fires up once, not again on every TXT update', function (t) {
     t.end()
   }, 100)
 })
+
+// === Known-answer suppression (RFC 6762 7.1) ===
+
+const knownAnswerServer = function (p) {
+  const bonjour = Bonjour({ ip: '127.0.0.1', port: p, multicast: false })
+  const server = bonjour._server
+  server.register([
+    { name: '_hap._tcp.local', type: 'PTR', ttl: 4500, data: 'One._hap._tcp.local' },
+    { name: '_hap._tcp.local', type: 'PTR', ttl: 4500, data: 'Two._hap._tcp.local' },
+    { name: 'One._hap._tcp.local', type: 'SRV', ttl: 120, data: { port: 1, target: 'one.local' } },
+    { name: 'Two._hap._tcp.local', type: 'SRV', ttl: 120, data: { port: 2, target: 'two.local' } }
+  ])
+  const responses = []
+  server.mdns.respond = function (pkt) { responses.push(pkt) }
+  return { bonjour, server, responses }
+}
+
+const ptrQuery = function (known) {
+  return { questions: [{ name: '_hap._tcp.local', type: 'PTR' }], answers: known }
+}
+
+tape('Server leaves out an answer the querier already holds', function (t) {
+  port(function (p) {
+    const { bonjour, server, responses } = knownAnswerServer(p)
+    server._respondToQuery(ptrQuery([{ name: '_hap._tcp.local', type: 'PTR', ttl: 4000, data: 'One._hap._tcp.local' }]))
+
+    t.equal(responses.length, 1)
+    t.deepEqual(responses[0].answers.map(function (r) { return r.data }), ['Two._hap._tcp.local'], 'only the PTR it lacks')
+    t.deepEqual(responses[0].additionals.map(function (r) { return r.name }), ['Two._hap._tcp.local'], 'and only that one\'s SRV')
+    bonjour.destroy(function () { t.end() })
+  })
+})
+
+tape('Server sends nothing when the querier already holds every answer', function (t) {
+  port(function (p) {
+    const { bonjour, server, responses } = knownAnswerServer(p)
+    server._respondToQuery(ptrQuery([
+      { name: '_hap._tcp.local', type: 'PTR', ttl: 4500, data: 'One._hap._tcp.local' },
+      { name: '_HAP._tcp.local', type: 'PTR', ttl: 4500, data: 'Two._hap._tcp.local' }
+    ]))
+
+    t.equal(responses.length, 0)
+    bonjour.destroy(function () { t.end() })
+  })
+})
+
+tape('Server still sends an answer the querier holds with under half its lifetime left', function (t) {
+  port(function (p) {
+    const { bonjour, server, responses } = knownAnswerServer(p)
+    server._respondToQuery(ptrQuery([{ name: '_hap._tcp.local', type: 'PTR', ttl: 2000, data: 'One._hap._tcp.local' }]))
+
+    t.equal(responses.length, 1)
+    t.equal(responses[0].answers.length, 2, 'both PTRs, so the querier can refresh the old one')
+    bonjour.destroy(function () { t.end() })
+  })
+})
