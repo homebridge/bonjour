@@ -14,6 +14,7 @@ All notable changes to `bonjour-hap` will be documented in this file. This proje
 - fix(server): answer all of a query's questions in one packet
 - feat(server): reply to one-shot lookups by unicast, so plain DNS clients get an answer
 - feat(browser): drop services that vanish without a goodbye, and apply TXT or SRV sent alone
+- fix(service): stop a TXT update firing up again, as if the service had just started
 
 ## v3.10.5 (2026-08-15)
 

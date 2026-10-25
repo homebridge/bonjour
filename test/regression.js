@@ -957,3 +957,25 @@ tape('A plain DNS client on another port gets an answer back', function (t) {
     })
   })
 })
+
+// === A TXT update must not fire 'up' again ===
+
+tape('Service fires up once, not again on every TXT update', function (t) {
+  const Registry = require('../lib/Registry.js')
+  const server = clashNetwork()
+  keepAlive(t)
+  const service = new Registry(server).publish({ name: 'Steady', type: 'hap', port: 51826, host: 'me.local', probe: false })
+  let ups = 0
+  service.on('up', function () {
+    ups++
+    if (ups === 1) {
+      service.updateTxt({ 'c#': 2 })
+      service.updateTxt({ 'c#': 3 })
+    }
+  })
+  setTimeout(function () {
+    t.equal(ups, 1, 'still the one up')
+    t.equal(service.published, true, 'and still published')
+    t.end()
+  }, 100)
+})

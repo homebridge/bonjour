@@ -151,7 +151,8 @@ Broadcast the query again.
 
 #### `Event: up`
 
-Emitted when the service is up, and if the txt record of the service is updated `service.updateTxt(object)`.
+Emitted once, when the service is up. Updating the txt record with
+`service.updateTxt(object)` does not emit it again.
 
 #### `Event: error`
 

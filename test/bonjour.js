@@ -128,7 +128,7 @@ test('bonjour.change and up event', function (bonjour, t) {
     t.end()
   }, 3000) // Wait 3000 ms for any additional up messages when the updateTxt is sent
   const service = bonjour.publish({ name: 'Baz', type: 'test', port: 3000, txt: { foo: 'originalUp' } }).on('up', function () {
-    if (!data.serviceUp) { // Workaround for Service.up firing when service.updateTxt is used
+    if (!data.serviceUp) { // 'up' fires once now, but keep the guard so a regression shows as a failure below, not a hang
       data.serviceUp = true
       const browser = bonjour.find({ type: 'test' })
       browser.on('up', function (s) {
