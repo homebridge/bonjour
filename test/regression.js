@@ -730,3 +730,99 @@ tape('register still keeps records that differ only in their data', function (t)
     bonjour.destroy(function () { t.end() })
   })
 })
+
+// === A name clash must not withdraw the other device's records, or crash ===
+
+// A stand-in network: records what is sent and, when asked, answers every probe
+// as though another device already owns the name
+const clashNetwork = function (opts) {
+  const EventEmitter = require('events').EventEmitter
+  const mdns = new EventEmitter()
+  mdns.sent = []
+  mdns.query = function (name, type, cb) {
+    mdns.sent.push({ query: name })
+    setImmediate(function () {
+      if (cb) cb()
+      if (opts && opts.taken) {
+        mdns.emit('response', { answers: [{ type: 'SRV', name, ttl: 120, data: { port: 9, target: 'other.local' } }], additionals: [] })
+      }
+    })
+  }
+  mdns.respond = function (packet, cb) {
+    mdns.sent.push({ respond: Array.isArray(packet) ? packet : packet.answers })
+    if (cb) setImmediate(cb) // a real socket confirms the send later, never synchronously
+  }
+  const server = new EventEmitter()
+  server.mdns = mdns
+  server.register = function () {}
+  server.unregister = function () {}
+  return server
+}
+
+// bonjour-hap unrefs its timers, so a test waiting on the probe has to keep the
+// process alive itself or it exits before the probe runs
+const keepAlive = function (t) {
+  const timer = setInterval(function () {}, 1000)
+  t.teardown(function () { clearInterval(timer) })
+}
+
+const goodbyesSent = function (mdns) {
+  return mdns.sent.filter(function (s) { return s.respond && s.respond.some(function (r) { return r.ttl === 0 }) })
+}
+
+tape('Registry sends no goodbye for a name another device owns', function (t) {
+  keepAlive(t)
+  const Registry = require('../lib/Registry.js')
+  const server = clashNetwork({ taken: true })
+  const service = new Registry(server).publish({ name: 'Taken', type: 'hap', port: 51826, host: 'me.local' })
+  service.on('error', function (err) {
+    t.match(err.message, /already in use/, 'the clash is reported')
+    t.deepEqual(goodbyesSent(server.mdns), [], 'no goodbye for the other device\'s name')
+    t.end()
+  })
+})
+
+tape('Registry does not crash on a name clash when nobody listens for errors', function (t) {
+  keepAlive(t)
+  const Registry = require('../lib/Registry.js')
+  const server = clashNetwork({ taken: true })
+  const warn = console.warn
+  const warnings = []
+  console.warn = function () { warnings.push(Array.prototype.join.call(arguments, ' ')) }
+  // Like HAP-NodeJS: no 'error' listener. Unhandled, the error throws out of a
+  // network callback and ends the process
+  const service = new Registry(server).publish({ name: 'Taken', type: 'hap', port: 51826, host: 'me.local' })
+  setTimeout(function () {
+    console.warn = warn
+    t.equal(warnings.length, 1, 'warned once instead')
+    t.match(warnings[0], /already in use/)
+    t.equal(service._activated, false, 'and the service stopped')
+    t.end()
+  }, 400)
+})
+
+tape('Registry sends no goodbye for a service stopped while still probing', function (t) {
+  const Registry = require('../lib/Registry.js')
+  const server = clashNetwork()
+  const service = new Registry(server).publish({ name: 'Early', type: 'hap', port: 51826, host: 'me.local' })
+  service.stop(function () {
+    t.deepEqual(goodbyesSent(server.mdns), [], 'nothing was announced, so nothing to withdraw')
+    t.equal(service.published, false)
+    t.end()
+  })
+})
+
+tape('Registry still says goodbye for a service it announced', function (t) {
+  keepAlive(t)
+  const Registry = require('../lib/Registry.js')
+  const server = clashNetwork()
+  const service = new Registry(server).publish({ name: 'Announced', type: 'hap', port: 51826, host: 'me.local', probe: false })
+  service.on('up', function () {
+    service.stop(function () {
+      const goodbyes = goodbyesSent(server.mdns)
+      t.equal(goodbyes.length, 1, 'one goodbye packet')
+      t.ok(goodbyes[0].respond.some(function (r) { return r.type === 'SRV' && r.name === 'Announced._hap._tcp.local' }), 'withdrawing its own SRV')
+      t.end()
+    })
+  })
+})
