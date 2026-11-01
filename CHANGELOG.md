@@ -2,7 +2,7 @@
 
 All notable changes to `bonjour-hap` will be documented in this file. This project tries to adhere to [Semantic Versioning](http://semver.org/).
 
-## v3.10.6 (Pending Release)
+## v3.11.0 (2026-11-01)
 
 ### Changes
 
