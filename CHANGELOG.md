@@ -21,6 +21,7 @@ All notable changes to `bonjour-hap` will be documented in this file. This proje
 - docs(readme): describe the options, callbacks and events the code really has
 - docs(readme): say the library is maintained for HAP-NodeJS, with ciao preferred
 - refactor(helpers): use a Set in unique(), and line up the comment blocks
+- refactor(server): write the dot check with includes()
 
 ## v3.11.0 (2026-11-01)
 
