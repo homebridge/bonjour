@@ -24,6 +24,7 @@ All notable changes to `bonjour-hap` will be documented in this file. This proje
 - refactor(server): write the dot check with includes()
 - refactor(service): attach the methods with Object.assign, like the other files
 - style(registry): line up the comment blocks
+- style(network): add the missing 'use strict'
 
 ## v3.11.0 (2026-11-01)
 
