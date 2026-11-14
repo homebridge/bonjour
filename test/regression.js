@@ -1382,3 +1382,15 @@ tape('Service refuses a name or host with a part longer than 63 bytes', function
   t.doesNotThrow(function () { new Service(opts({ host: 'a'.repeat(40) + '.' + 'b'.repeat(40) + '.local' })) }, 'the limit is for each part, not the whole host') // eslint-disable-line no-new
   t.end()
 })
+
+tape('Service refuses a TXT entry longer than 255 bytes', function (t) {
+  const opts = { name: 'Fine', type: 'hap', port: 51826, host: 'me.local', txt: { ok: 'yes' } }
+
+  t.throws(function () { new Service(Object.assign({}, opts, { txt: { big: 'v'.repeat(252) } })) }, /TXT entry "big" is longer than 255 bytes/, 'at publish: "big=" plus 252 is 256') // eslint-disable-line no-new
+  t.doesNotThrow(function () { new Service(Object.assign({}, opts, { txt: { big: 'v'.repeat(251) } })) }, 'exactly 255 bytes is fine') // eslint-disable-line no-new
+
+  const service = new Service(opts)
+  t.throws(function () { service.updateTxt({ big: 'v'.repeat(300) }) }, /longer than 255 bytes/, 'and at updateTxt')
+  t.deepEqual(service.txt, { ok: 'yes' }, 'which leaves the old TXT in place')
+  t.end()
+})
