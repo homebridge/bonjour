@@ -1230,3 +1230,32 @@ tape('Registry announces once when a service is stopped and started again mid-pr
     }, 400)
   })
 })
+
+// === A stopped service's TXT record must be withdrawn like the rest ===
+
+tape('isSameRecord matches a TXT record whether its data is text or bytes', function (t) {
+  const built = { name: 'Foo._hap._tcp.local', type: 'TXT', ttl: 4500, data: ['a=b', 'c=d'] }
+  const sent = { name: 'Foo._hap._tcp.local', type: 'TXT', ttl: 4500, data: [Buffer.from('a=b'), Buffer.from('c=d')] }
+  t.equal(helpers.isSameRecord(built)(sent), true, 'text against bytes')
+  t.equal(helpers.isSameRecord(sent)(built), true, 'bytes against text')
+  t.equal(helpers.isSameRecord(built)({ name: built.name, type: 'TXT', data: [Buffer.from('a=b'), Buffer.from('c=x')] }), false, 'different data still differs')
+  t.equal(helpers.isSameRecord(built)({ name: built.name, type: 'TXT', data: [Buffer.from('a=b')] }), false, 'as does a different number of entries')
+  t.end()
+})
+
+tape('Server answers for none of a service\'s records once it has stopped', function (t) {
+  port(function (p) {
+    const bonjour = Bonjour({ ip: '127.0.0.1', port: p, multicast: false })
+    const service = bonjour.publish({ name: 'Leftover', type: 'hap', port: 51826, host: 'me.local', probe: false, txt: { a: 'b' } })
+    service.on('up', function () {
+      const registry = bonjour._server.registry
+      t.equal(registry.TXT.length, 1, 'precondition: the TXT record is registered')
+      // Sending the announcement turned the stored TXT data from text into bytes
+      service.stop(function () {
+        const left = Object.keys(registry).filter(function (type) { return registry[type].length > 0 })
+        t.deepEqual(left, [], 'every record type is empty')
+        bonjour.destroy(function () { t.end() })
+      })
+    })
+  })
+})
