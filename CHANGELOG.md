@@ -19,6 +19,7 @@ All notable changes to `bonjour-hap` will be documented in this file. This proje
 - perf(server): leave out an SRV answer the querier already holds
 - fix(types): match the events, TXT values and optional arguments the code really has
 - docs(readme): describe the options, callbacks and events the code really has
+- docs(readme): say the library is maintained for HAP-NodeJS, with ciao preferred
 
 ## v3.11.0 (2026-11-01)
 
