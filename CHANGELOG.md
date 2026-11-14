@@ -25,6 +25,7 @@ All notable changes to `bonjour-hap` will be documented in this file. This proje
 - refactor(service): attach the methods with Object.assign, like the other files
 - style(registry): line up the comment blocks
 - style(network): add the missing 'use strict'
+- chore: drop package.json from the files list, as npm always includes it
 
 ## v3.11.0 (2026-11-01)
 
