@@ -17,6 +17,7 @@ All notable changes to `bonjour-hap` will be documented in this file. This proje
 - fix(service): reject a TXT entry longer than 255 bytes
 - fix(service): send a single zero byte for an empty TXT record
 - perf(server): leave out an SRV answer the querier already holds
+- fix(types): match the events, TXT values and optional arguments the code really has
 
 ## v3.11.0 (2026-11-01)
 
