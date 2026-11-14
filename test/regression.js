@@ -1367,3 +1367,18 @@ tape('Browser drops at once, on start, a service that ran out while it was stopp
     }, 50)
   }, 1100)
 })
+
+// === Values too long for DNS are refused, not sent as unreadable packets ===
+
+tape('Service refuses a name or host with a part longer than 63 bytes', function (t) {
+  const opts = function (extra) { return Object.assign({ name: 'Fine', type: 'hap', port: 51826, host: 'me.local' }, extra) }
+
+  t.throws(function () { new Service(opts({ name: 'x'.repeat(64) })) }, /name ".*" is longer than 63 bytes/, 'a 64 byte name') // eslint-disable-line no-new
+  // 32 two-byte characters: 32 long as text, but 64 bytes on the wire
+  t.throws(function () { new Service(opts({ name: 'é'.repeat(32) })) }, /longer than 63 bytes/, 'counted in bytes, not characters') // eslint-disable-line no-new
+  t.throws(function () { new Service(opts({ host: 'x'.repeat(64) + '.local' })) }, /host ".*" is longer than 63 bytes/, 'a 64 byte host part') // eslint-disable-line no-new
+
+  t.doesNotThrow(function () { new Service(opts({ name: 'x'.repeat(63) })) }, 'a 63 byte name is fine') // eslint-disable-line no-new
+  t.doesNotThrow(function () { new Service(opts({ host: 'a'.repeat(40) + '.' + 'b'.repeat(40) + '.local' })) }, 'the limit is for each part, not the whole host') // eslint-disable-line no-new
+  t.end()
+})
