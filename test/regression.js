@@ -1394,3 +1394,13 @@ tape('Service refuses a TXT entry longer than 255 bytes', function (t) {
   t.deepEqual(service.txt, { ok: 'yes' }, 'which leaves the old TXT in place')
   t.end()
 })
+
+tape('Service sends an empty TXT record as a single zero byte', function (t) {
+  const dnsPacket = require('dns-packet')
+  const service = new Service({ name: 'Bare', type: 'hap', port: 51826, host: 'me.local' })
+  const sent = dnsPacket.decode(dnsPacket.encode({ type: 'response', answers: [service._rrTxt()] })).answers[0]
+
+  t.deepEqual(sent.data, [Buffer.alloc(0)], 'one entry, zero bytes long')
+  t.deepEqual(require('../lib/utils/txtDecoder')().decodeBlocks(sent.data), {}, 'which still reads back as no TXT data')
+  t.end()
+})

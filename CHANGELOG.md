@@ -15,6 +15,7 @@ All notable changes to `bonjour-hap` will be documented in this file. This proje
 - fix(browser): keep expiring services after a stop and start
 - fix(service): reject a name longer than 63 bytes
 - fix(service): reject a TXT entry longer than 255 bytes
+- fix(service): send a single zero byte for an empty TXT record
 
 ## v3.11.0 (2026-11-01)
 
