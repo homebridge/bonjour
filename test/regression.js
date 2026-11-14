@@ -1302,3 +1302,17 @@ tape('Browser survives services and hosts named like built-in object properties'
   t.deepEqual(browser._cachedAddresses('constructor'), ['1.2.3.4'], 'with its oddly named host\'s address remembered')
   t.end()
 })
+
+tape('TXT decoding keeps keys named like built-in object properties', function (t) {
+  const decode = require('../lib/utils/txtDecoder')().decodeBlocks
+  const txt = decode([Buffer.from('constructor=a'), Buffer.from('__proto__=b'), Buffer.from('toString'), Buffer.from('c=d')])
+
+  t.deepEqual(Object.keys(txt).sort(), ['__proto__', 'c', 'constructor', 'tostring'], 'no key was dropped')
+  t.equal(txt.constructor, 'a')
+  t.equal(Object.getOwnPropertyDescriptor(txt, '__proto__').value, 'b')
+  t.equal(Object.getPrototypeOf(txt), Object.prototype, 'and the result is still a plain object')
+
+  const binary = require('../lib/utils/txtDecoder')({ binary: true }).decodeBlocks([Buffer.from('__proto__=b')])
+  t.equal(Object.getPrototypeOf(binary), Object.prototype, 'also when values are kept as bytes')
+  t.end()
+})

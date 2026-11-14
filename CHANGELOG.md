@@ -11,6 +11,7 @@ All notable changes to `bonjour-hap` will be documented in this file. This proje
 - fix(registry): do not announce a service that was stopped while probing
 - fix(server): withdraw a stopped service's TXT record too
 - fix(browser): survive services and hosts named like built-in object properties
+- fix(browser): keep a TXT key named constructor
 
 ## v3.11.0 (2026-11-01)
 
