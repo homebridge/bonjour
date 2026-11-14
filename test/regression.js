@@ -1167,3 +1167,14 @@ tape('Service.updateTxt on a stopped service withdraws nothing', function (t) {
     })
   })
 })
+
+tape('Service stopped from its own up listener is not announced again', function (t) {
+  watchedService(t, function (service) {
+    // watchedService calls back from inside the 'up' listener
+    service.stop()
+    setImmediate(function () {
+      t.ok(!service.timer || service.timer._destroyed, 'no re-announcement is left scheduled')
+      t.end()
+    })
+  })
+})
