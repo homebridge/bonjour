@@ -69,14 +69,25 @@ Publishes a new service.
 
 Options are:
 
-- `name` (string)
+- `name` (string) - at most 63 bytes. A name with a dot in it is sent
+  as two names, so Apple devices do not list the service
 - `host` (string, optional) - defaults to local hostname
 - `port` (number)
 - `type` (string)
-- `subtypes` (array of strings, optional)
+- `subtypes` (array of strings, optional) - kept on the service as
+  `service.subtypes`, but not advertised
 - `protocol` (string, optional) - `udp` or `tcp` (default)
 - `txt` (object, optional) - a key/value object to broadcast as the TXT
-  record
+  record. Each `key=value` entry can be at most 255 bytes
+- `probe` (boolean, optional) - check that the name is free on the
+  network before announcing it. Defaults to `true`
+- `restrictedAddresses` (array of strings, optional) - IP addresses
+  and/or network interface names. Only these addresses are advertised.
+  An interface name stands for every address on that interface
+- `disabledIpv6` (boolean, optional) - do not advertise IPv6 addresses
+- `addUnsafeServiceEnumerationRecord` (boolean, optional) - also
+  advertise the service type under `_services._dns-sd._udp.local`, the
+  name that tools listing every type of service ask for
 
 IANA maintains a [list of official service types and port
 numbers](http://www.iana.org/assignments/service-names-port-numbers/service-names-port-numbers.xhtml).
@@ -86,9 +97,17 @@ numbers](http://www.iana.org/assignments/service-names-port-numbers/service-name
 Unpublish all services. The optional `callback` will be called when the
 services have been unpublished.
 
-#### `bonjour.destroy()`
+#### `bonjour.destroy([callback])`
 
-Destroy the mdns instance. Closes the udp socket.
+Destroy the mdns instance. Says goodbye for every published service,
+then closes the udp socket. The optional `callback` will be called when
+that is done.
+
+#### `Event: error`
+
+Emitted on the `bonjour` instance when the udp socket reports an error,
+or a reply could not be sent. With no listener attached, the error is
+logged with `console.warn` instead of being thrown.
 
 ### Browser
 
@@ -100,12 +119,11 @@ for the `up` event.
 
 Options (all optional):
 
-- `type` (string)
-- `subtypes` (array of strings)
+- `type` (string) - leave out to look for every type of service
 - `protocol` (string) - defaults to `tcp`
-- `txt` (object) - passed into [dns-txt
-  module](https://github.com/watson/dns-txt) contructor. Set to `{
-  binary: true }` if you want to keep the TXT records in binary
+- `name` (string) - look for one service of that name only
+- `txt` (object) - set to `{ binary: true }` if you want to keep the
+  values of the TXT records in binary
 
 #### `var browser = bonjour.findOne(options[, callback])`
 
@@ -169,9 +187,16 @@ service have been unpublished.
 
 Publish the service.
 
-#### `service.updateTxt(object)`
+#### `service.updateTxt(object[, silent])`
 
-Update the txt record of the service.
+Update the txt record of the service. The new record is announced to
+the network, unless `silent` is `true`: then it is only given out when
+asked for.
+
+#### `service.destroy()`
+
+Stop the service's timers and remove its listeners, without saying
+goodbye. Call `service.stop()` first to withdraw it from the network.
 
 #### `service.name`
 
