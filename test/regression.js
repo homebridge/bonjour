@@ -1259,3 +1259,46 @@ tape('Server answers for none of a service\'s records once it has stopped', func
     })
   })
 })
+
+// === Names from the network that match built-in object properties ===
+
+// A browser on a stand-in network that sends nothing
+const quietBrowser = function (opts) {
+  const Browser = require('../lib/Browser.js')
+  const EventEmitter = require('events').EventEmitter
+  const mdns = new EventEmitter()
+  mdns.query = function () {}
+  const browser = new Browser(mdns, opts)
+  browser.mdns = mdns
+  return browser
+}
+
+tape('Browser survives services and hosts named like built-in object properties', function (t) {
+  const browser = quietBrowser({ type: 'hap' })
+  t.teardown(function () {
+    browser.stop()
+    // Left behind only when the fix is missing: do not let it leak into other tests
+    delete Object.prototype['5.6.7.8']
+    delete Object['1.2.3.4']
+  })
+
+  const packet = {
+    answers: [
+      { type: 'PTR', name: '_hap._tcp.local', ttl: 4500, data: 'Real._hap._tcp.local' },
+      { type: 'PTR', name: '_hap._tcp.local', ttl: 4500, data: '__proto__' },
+      { type: 'PTR', name: '_hap._tcp.local', ttl: 4500, data: 'constructor' }
+    ],
+    additionals: [
+      { type: 'SRV', name: 'Real._hap._tcp.local', ttl: 120, data: { port: 51826, target: 'constructor' } },
+      { type: 'A', name: 'constructor', ttl: 120, data: '1.2.3.4' },
+      { type: 'A', name: '__proto__', ttl: 120, data: '5.6.7.8' }
+    ]
+  }
+
+  t.doesNotThrow(function () { browser.mdns.emit('response', packet, {}) }, 'the packet does not crash the browser')
+  t.deepEqual(Object.keys(Object.prototype), [], 'nothing was written onto Object.prototype')
+  t.deepEqual(Object.keys(Object), [], 'nor onto Object')
+  t.deepEqual(browser.services.map(function (s) { return s.fqdn }), ['Real._hap._tcp.local'], 'and the real service was found')
+  t.deepEqual(browser._cachedAddresses('constructor'), ['1.2.3.4'], 'with its oddly named host\'s address remembered')
+  t.end()
+})
