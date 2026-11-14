@@ -23,6 +23,7 @@ All notable changes to `bonjour-hap` will be documented in this file. This proje
 - refactor(helpers): use a Set in unique(), and line up the comment blocks
 - refactor(server): write the dot check with includes()
 - refactor(service): attach the methods with Object.assign, like the other files
+- style(registry): line up the comment blocks
 
 ## v3.11.0 (2026-11-01)
 
