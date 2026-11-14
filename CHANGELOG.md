@@ -13,6 +13,7 @@ All notable changes to `bonjour-hap` will be documented in this file. This proje
 - fix(browser): survive services and hosts named like built-in object properties
 - fix(browser): keep a TXT key named constructor
 - fix(browser): keep expiring services after a stop and start
+- fix(service): reject a name longer than 63 bytes
 
 ## v3.11.0 (2026-11-01)
 
