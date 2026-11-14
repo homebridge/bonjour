@@ -26,6 +26,7 @@ All notable changes to `bonjour-hap` will be documented in this file. This proje
 - style(registry): line up the comment blocks
 - style(network): add the missing 'use strict'
 - chore: drop package.json from the files list, as npm always includes it
+- test: cover TXT decoding edge cases, unheard errors and bad address restrictions
 
 ## v3.11.0 (2026-11-01)
 

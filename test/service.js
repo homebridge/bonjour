@@ -156,3 +156,27 @@ test('_addressRecords() - unrestricted advertises every external address', funct
   })
   t.end()
 })
+
+test('restrictedAddresses - refuses an empty list', function (t) {
+  t.throws(function () {
+    new Service({ name: 'Foo Bar', type: 'http', port: 3000, restrictedAddresses: [] }) // eslint-disable-line no-new
+  }, /cannot be an empty array/)
+  t.end()
+})
+
+test('restrictedAddresses - refuses the unspecified address', function (t) {
+  for (const address of ['0.0.0.0', '::']) {
+    t.throws(function () {
+      new Service({ name: 'Foo Bar', type: 'http', port: 3000, restrictedAddresses: [address] }) // eslint-disable-line no-new
+    }, /Unspecified ip address/, address)
+  }
+  t.end()
+})
+
+test('restrictedAddresses - refuses an address no interface has', function (t) {
+  t.throws(function () {
+    // 192.0.2.0/24 is reserved for documentation, so no machine has it
+    new Service({ name: 'Foo Bar', type: 'http', port: 3000, restrictedAddresses: ['192.0.2.1'] }) // eslint-disable-line no-new
+  }, /could not resolve it to an interface name/)
+  t.end()
+})
