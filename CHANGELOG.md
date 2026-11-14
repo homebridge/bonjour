@@ -7,6 +7,7 @@ All notable changes to `bonjour-hap` will be documented in this file. This proje
 ### Changes
 
 - fix(service): stop a TXT update at the wrong moment crashing or dropping records
+- fix(service): do not re-announce a service stopped from its own up listener
 
 ## v3.11.0 (2026-11-01)
 
