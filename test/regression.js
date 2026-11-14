@@ -1404,3 +1404,27 @@ tape('Service sends an empty TXT record as a single zero byte', function (t) {
   t.deepEqual(require('../lib/utils/txtDecoder')().decodeBlocks(sent.data), {}, 'which still reads back as no TXT data')
   t.end()
 })
+
+// === Known-answer suppression has to work for SRV records too ===
+
+tape('Server leaves out an SRV answer the querier already holds', function (t) {
+  const dnsPacket = require('dns-packet')
+  const Server = require('../lib/Server.js')
+  const server = Object.create(Server.prototype)
+  server.registry = {}
+  const srv = { name: 'Foo._hap._tcp.local', type: 'SRV', ttl: 120, flush: true, data: { port: 51826, target: 'me.local' } }
+  server.register(srv)
+  const question = { name: srv.name, type: 'SRV' }
+
+  // The record as a querier holds it: read off the network, with priority and weight
+  const held = function (record) {
+    return dnsPacket.decode(dnsPacket.encode({ type: 'response', answers: [record] })).answers
+  }
+
+  t.ok(server._answer(question, []), 'precondition: answered when the querier holds nothing')
+  t.equal(server._answer(question, held(srv)), undefined, 'left out when the querier holds it')
+  t.ok(server._answer(question, held(Object.assign({}, srv, { data: { port: 1, target: 'me.local' } }))), 'still sent when the held one has another port')
+  t.ok(server._answer(question, held(Object.assign({}, srv, { data: { port: 51826, target: 'other.local' } }))), 'or another host')
+  t.ok(server._answer(question, held(Object.assign({}, srv, { data: { port: 51826, target: 'me.local', priority: 5 } }))), 'or another priority')
+  t.end()
+})
