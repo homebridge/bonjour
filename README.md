@@ -19,15 +19,16 @@ multicast DNS.
 
 ## Notice
 
-The `bonjour-hap` library was used in [HAP-NodeJS](https://github.com/homebridge/HAP-NodeJS) in versions
-prior to v0.8.0. 
-`bonjour-hap` does NOT correctly implement mdns service discovery as it does not correctly implement
-RFC 6762 or RFC 6763. The library heavily congest the network with unnecessary traffic, does not implement
-certain features and does not behave as expected from a mdns responder (or querier).
-It SHOULD NOT be used anymore. It is not maintained anymore. The code should not be taken as reference for anything.
+`bonjour-hap` is maintained by the Homebridge team for
+[HAP-NodeJS](https://github.com/homebridge/HAP-NodeJS), where it is one of the advertisers that can be chosen.
+It was the only one in versions prior to v0.8.0.
 
-`bonjour-hap` was replaced by the [ciao](https://github.com/homebridge/ciao) library, which is basically a rewrite 
-and strongly adheres to the mentioned RFCs. Ciao is used in `HAP-NodeJS` since v0.8.0.
+For new projects, the [ciao](https://github.com/homebridge/ciao) library is preferred. It is the default advertiser
+in `HAP-NodeJS` since v0.8.0, and closely follows RFC 6762 (mDNS) and RFC 6763 (DNS-SD).
+
+`bonjour-hap` does not fully implement those RFCs: for example it does not advertise service subtypes, and has no
+tiebreaking when two devices ask for the same name at the same moment. Bugs are fixed, but the code should not be
+taken as a reference for how mDNS should work.
 
 ## Installation
 
