@@ -1178,3 +1178,55 @@ tape('Service stopped from its own up listener is not announced again', function
     })
   })
 })
+
+// === A service stopped while probing must not be announced when the probe ends ===
+
+const announcementsSent = function (mdns) {
+  return mdns.sent.filter(function (s) { return s.respond && s.respond.every(function (r) { return r.ttl > 0 }) })
+}
+
+// Calls back once the service's probe has sent its third and last query
+const afterLastProbe = function (server, cb) {
+  const timer = setInterval(function () {
+    if (server.mdns.sent.filter(function (s) { return s.query }).length < 3) return
+    clearInterval(timer)
+    cb()
+  }, 5)
+}
+
+tape('Registry does not announce a service stopped during the last wait of its probe', function (t) {
+  keepAlive(t)
+  const Registry = require('../lib/Registry.js')
+  const server = recordingNetwork()
+  const service = new Registry(server).publish({ name: 'Ghost', type: 'hap', port: 51826, host: 'me.local' })
+
+  afterLastProbe(server, function () {
+    service.stop()
+    t.equal(server.mdns.listenerCount('response'), 0, 'the probe stopped listening at once')
+    // The probe would have ended 250 ms after its last query
+    setTimeout(function () {
+      t.deepEqual(announcementsSent(server.mdns), [], 'nothing was announced')
+      t.deepEqual(server.registered, [], 'and no records answer for it')
+      t.equal(service._addressTimer, undefined, 'nor is its address being watched')
+      t.end()
+    }, 400)
+  })
+})
+
+tape('Registry announces once when a service is stopped and started again mid-probe', function (t) {
+  keepAlive(t)
+  const Registry = require('../lib/Registry.js')
+  const server = recordingNetwork()
+  const service = new Registry(server).publish({ name: 'Twice', type: 'hap', port: 51826, host: 'me.local' })
+  service.stop()
+  service.start()
+
+  service.on('up', function () {
+    // Long enough for a second, left-over probe to have finished as well
+    setTimeout(function () {
+      t.equal(announcementsSent(server.mdns).length, 1, 'one probe, one announcement')
+      service.stop()
+      t.end()
+    }, 400)
+  })
+})
