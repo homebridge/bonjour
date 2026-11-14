@@ -1428,3 +1428,20 @@ tape('Server leaves out an SRV answer the querier already holds', function (t) {
   t.ok(server._answer(question, held(Object.assign({}, srv, { data: { port: 51826, target: 'me.local', priority: 5 } }))), 'or another priority')
   t.end()
 })
+
+// === A network error nobody listens for is logged, not thrown ===
+
+tape('Bonjour logs a network error when there is no error listener', function (t) {
+  port(function (p) {
+    const bonjour = Bonjour({ ip: '127.0.0.1', port: p, multicast: false })
+    const warn = console.warn
+    const warnings = []
+    console.warn = function () { warnings.push(Array.prototype.join.call(arguments, ' ')) }
+    t.teardown(function () { console.warn = warn })
+
+    t.doesNotThrow(function () { bonjour._server.emit('error', new Error('socket trouble')) }, 'not thrown')
+    console.warn = warn
+    t.deepEqual(warnings, ['bonjour-hap: socket trouble'], 'logged once, with the library name')
+    bonjour.destroy(function () { t.end() })
+  })
+})
