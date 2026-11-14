@@ -1103,3 +1103,67 @@ tape('Service stops watching its address once stopped', function (t) {
     })
   })
 })
+
+// === A TXT update at the wrong moment must not drop records or crash ===
+
+// A stand-in network that also records what the server was asked to answer for
+const recordingNetwork = function () {
+  const server = clashNetwork()
+  server.registered = []
+  server.unregistered = []
+  server.register = function (records) { server.registered.push(records) }
+  server.unregister = function (records) { server.unregistered.push(records) }
+  return server
+}
+
+tape('Service keeps its records when the TXT changes while the first announcement is going out', function (t) {
+  keepAlive(t)
+  const Registry = require('../lib/Registry.js')
+  const server = recordingNetwork()
+  // No probe, so publish() announces at once: the send is confirmed a moment later
+  const service = new Registry(server).publish({ name: 'Early', type: 'hap', port: 51826, host: 'me.local', probe: false, txt: { v: 'old' } })
+  service.updateTxt({ v: 'new' })
+
+  let ups = 0
+  service.on('up', function () { ups++ })
+  setTimeout(function () {
+    t.equal(ups, 1, 'up fired once')
+    t.ok(Array.isArray(service.packet), 'the service still has records')
+    const last = server.registered[server.registered.length - 1]
+    t.ok(last && last.some(function (r) { return r.type === 'TXT' && String(r.data[0]) === 'v=new' }), 'and the new TXT is the one answered for')
+
+    // The re-announcement, 3 seconds later, used to hand the server null and crash
+    service._emitAnnounce()
+    t.ok(server.registered.every(Array.isArray), 'a re-announcement sends real records')
+    service.stop()
+    t.end()
+  }, 50)
+})
+
+tape('Service keeps one re-announcement schedule when two announcements are confirmed', function (t) {
+  watchedService(t, function (service) {
+    // 'up' fires just before the first confirmation schedules the re-announcement
+    setImmediate(function () {
+      const first = service.timer
+      t.ok(first, 'precondition: a re-announcement is scheduled')
+      service.onAnnounceComplete()
+      t.notEqual(service.timer, first, 'the second confirmation scheduled its own')
+      t.equal(first._destroyed, true, 'and cancelled the first')
+      service.stop()
+      t.end()
+    })
+  })
+})
+
+tape('Service.updateTxt on a stopped service withdraws nothing', function (t) {
+  watchedService(t, function (service, server) {
+    service.stop(function () {
+      const before = server.unregistered.length
+      // Its address records are shared with every other service on the host
+      service.updateTxt({ v: 'new' })
+      t.equal(server.unregistered.length, before, 'no records taken away')
+      t.equal(service.packet, null, 'the new TXT is picked up at the next start')
+      t.end()
+    })
+  })
+})

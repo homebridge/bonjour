@@ -2,6 +2,12 @@
 
 All notable changes to `bonjour-hap` will be documented in this file. This project tries to adhere to [Semantic Versioning](http://semver.org/).
 
+## v3.11.1 (Pending Release)
+
+### Changes
+
+- fix(service): stop a TXT update at the wrong moment crashing or dropping records
+
 ## v3.11.0 (2026-11-01)
 
 ### Changes
