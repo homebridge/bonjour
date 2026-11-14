@@ -1316,3 +1316,54 @@ tape('TXT decoding keeps keys named like built-in object properties', function (
   t.equal(Object.getPrototypeOf(binary), Object.prototype, 'also when values are kept as bytes')
   t.end()
 })
+
+// === Services must still expire after the browser is stopped and started ===
+
+const shortLivedService = function (ttl) {
+  return {
+    answers: [{ type: 'PTR', name: '_hap._tcp.local', ttl, data: 'Brief._hap._tcp.local' }],
+    additionals: [
+      { type: 'SRV', name: 'Brief._hap._tcp.local', ttl: 120, data: { port: 51826, target: 'brief.local' } },
+      { type: 'A', name: 'brief.local', ttl: 120, data: '1.2.3.4' }
+    ]
+  }
+}
+
+tape('Browser drops a vanished service after being stopped and started again', function (t) {
+  keepAlive(t)
+  const browser = quietBrowser({ type: 'hap' })
+  t.teardown(function () { browser.stop() })
+  const downs = []
+  browser.on('down', function (service) { downs.push(service.fqdn) })
+
+  browser.mdns.emit('response', shortLivedService(1), {})
+  t.equal(browser.services.length, 1, 'precondition: the service was found')
+
+  browser.stop()
+  browser.start()
+
+  // The service said it would last 1 second, and never answers again
+  setTimeout(function () {
+    t.deepEqual(downs, ['Brief._hap._tcp.local'], 'it was reported down when its time ran out')
+    t.equal(browser.services.length, 0, 'and left the list')
+    t.end()
+  }, 1200)
+})
+
+tape('Browser drops at once, on start, a service that ran out while it was stopped', function (t) {
+  keepAlive(t)
+  const browser = quietBrowser({ type: 'hap' })
+  t.teardown(function () { browser.stop() })
+
+  browser.mdns.emit('response', shortLivedService(1), {})
+  browser.stop()
+
+  setTimeout(function () {
+    t.equal(browser.services.length, 1, 'still listed while stopped')
+    browser.start()
+    setTimeout(function () {
+      t.equal(browser.services.length, 0, 'gone straight after the start')
+      t.end()
+    }, 50)
+  }, 1100)
+})
