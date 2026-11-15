@@ -1532,3 +1532,21 @@ tape('Service keeps its re-announcement schedule after a silent TXT update', fun
     })
   })
 })
+
+// === The default host name can be looked up over mDNS ===
+
+tape('Service adds .local to a default host name that has no domain', function (t) {
+  const os = require('os')
+  const real = os.hostname
+  t.teardown(function () { os.hostname = real })
+  const hostFor = function (hostname, opts) {
+    os.hostname = function () { return hostname }
+    return new Service(Object.assign({ name: 'Host', type: 'hap', port: 51826 }, opts)).host
+  }
+
+  t.equal(hostFor('raspberrypi'), 'raspberrypi.local', 'a bare machine name gets .local')
+  t.equal(hostFor('Bens-Mac.local'), 'Bens-Mac.local', 'a .local name is kept')
+  t.equal(hostFor('server.example.com'), 'server.example.com', 'as is a name with another domain')
+  t.equal(hostFor('raspberrypi', { host: 'given' }), 'given', 'and a host passed in is never changed')
+  t.end()
+})
