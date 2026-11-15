@@ -32,3 +32,9 @@ test('txt decoder - binary keeps values as bytes', function (t) {
   t.deepEqual(txtDecoder({ binary: true }).decodeBlocks(blocks('a=b', 'flag')), { a: Buffer.from('b'), flag: true })
   t.end()
 })
+
+test('txt decoder - the first entry for a key wins, also over a repeat with no value', function (t) {
+  t.deepEqual(txtDecoder().decodeBlocks(blocks('a=1', 'A')), { a: '1' }, 'a later entry with no value does not replace the value')
+  t.deepEqual(txtDecoder().decodeBlocks(blocks('a', 'a=1')), { a: true }, 'nor does a later value replace an entry with none')
+  t.end()
+})
