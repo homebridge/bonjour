@@ -42,6 +42,7 @@ All notable changes to `bonjour-hap` will be documented in this file. This proje
 - fix(browser): keep the first value of a TXT key that is repeated with no value
 - fix(browser): keep expiry timers for listed services only, also when a PTR comes alone
 - fix(browser): forget expired addresses, finished lookups and old re-asks
+- ci: keep the npm publish token to the publish job, stay on npm 11 and pass refs as env
 
 ## v3.11.0 (2026-11-01)
 
