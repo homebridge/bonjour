@@ -89,7 +89,9 @@ Options are:
 - `disabledIpv6` (boolean, optional) - do not advertise IPv6 addresses
 - `addUnsafeServiceEnumerationRecord` (boolean, optional) - also
   advertise the service type under `_services._dns-sd._udp.local`, the
-  name that tools listing every type of service ask for
+  name that tools listing every type of service ask for. Despite the
+  name it is safe with several services: those of the same type share
+  the record, and it is withdrawn when the last of them stops
 
 IANA maintains a [list of official service types and port
 numbers](http://www.iana.org/assignments/service-names-port-numbers/service-names-port-numbers.xhtml).

@@ -134,8 +134,8 @@ declare namespace Bonjour {
 
     /**
      * Adds a meta enumeration record (`_services._dns-sd._udp.local`) when announcing.
-     * Only safe to enable when a single service is advertised on the responder, otherwise
-     * removing one service will break enumeration for the others.
+     * Safe with several services, despite the name: since v3.10.5 services of the same type
+     * share the record, and it is withdrawn when the last of them stops.
      */
     addUnsafeServiceEnumerationRecord?: boolean;
 
