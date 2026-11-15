@@ -38,6 +38,7 @@ All notable changes to `bonjour-hap` will be documented in this file. This proje
 - docs: say the service enumeration record is safe with several services
 - fix: stop the browsers made with find() when destroy() is called
 - fix: throw when publish() or find() is called after destroy()
+- fix(browser): list a service once when it is announced again in other casing
 
 ## v3.11.0 (2026-11-01)
 
