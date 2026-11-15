@@ -174,8 +174,9 @@ Broadcast the query again.
 
 #### `Event: up`
 
-Emitted once, when the service is up. Updating the txt record with
-`service.updateTxt(object)` does not emit it again.
+Emitted once each time the service is started, after its first
+announcement. Updating the txt record with `service.updateTxt(object)`
+does not emit it again.
 
 #### `Event: error`
 
@@ -195,8 +196,9 @@ Publish the service.
 #### `service.updateTxt(object[, silent])`
 
 Update the txt record of the service. The new record is announced to
-the network, unless `silent` is `true`: then it is only given out when
-asked for.
+the network straight away, unless `silent` is `true`: then it is given
+out when asked for, and with the next re-announcement that was already
+planned.
 
 #### `service.destroy()`
 

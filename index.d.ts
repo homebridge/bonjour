@@ -110,7 +110,10 @@ declare namespace Bonjour {
     stop(callback?: (error?: Error | null) => void): void;
     /** Tear down the service and remove all listeners. */
     destroy(): void;
-    /** Replace the TXT record. If `silent` is true, the new record is registered but not re-announced. */
+    /**
+     * Replace the TXT record. If `silent` is true, it is not announced straight away: it is given out when
+     * asked for, and with the next re-announcement that was already planned.
+     */
     updateTxt(txt: Record<string, string>, silent?: boolean): void;
 
     /** Emitted once each time the service is started, after its first announcement. Not emitted again by `updateTxt`. */

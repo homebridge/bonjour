@@ -51,6 +51,7 @@ All notable changes to `bonjour-hap` will be documented in this file. This proje
 - fix(prober): report a name clash once, so the service stopped for it is not announced
 - fix(browser): ignore the rest of a packet once a listener stops the browser
 - fix(service): ignore a send confirmed after the service was stopped and started again
+- docs: say a silent TXT update still goes out with the next planned re-announcement
 
 ## v3.11.0 (2026-11-01)
 
