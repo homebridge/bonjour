@@ -1780,3 +1780,34 @@ tape('Browser keeps no empty entry for a goodbye from a host it never heard of',
   t.deepEqual(Object.keys(browser._addressCache), [])
   t.end()
 })
+
+// === A name check that found a clash must not go on to announce the name ===
+
+tape('Registry does not announce a name found taken while the last probe was being sent', function (t) {
+  keepAlive(t)
+  const Registry = require('../lib/Registry.js')
+  const server = recordingNetwork()
+  let queries = 0
+  server.mdns.query = function (name, type, cb) {
+    queries++
+    server.mdns.sent.push({ query: name })
+    setImmediate(function () {
+      // Another device's answer to the last probe is read before the send of
+      // that probe is confirmed
+      if (queries === 3) {
+        server.mdns.emit('response', { answers: [{ type: 'SRV', name, ttl: 120, data: { port: 9, target: 'other.local' } }], additionals: [] })
+      }
+      if (cb) cb()
+    })
+  }
+  const service = new Registry(server).publish({ name: 'Taken', type: 'hap', port: 51826, host: 'me.local' })
+  service.on('error', function () {
+    // The probe used to report again, "name free", 250 ms after the clash
+    setTimeout(function () {
+      t.deepEqual(announcementsSent(server.mdns), [], 'nothing was announced')
+      t.deepEqual(server.registered, [], 'and no records answer for it')
+      t.equal(service._addressTimer, undefined, 'nor is its address being watched')
+      t.end()
+    }, 400)
+  })
+})
