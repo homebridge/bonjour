@@ -1502,3 +1502,33 @@ tape('Service started again after a stop announces the address the host has now'
     })
   })
 })
+
+// === A silent TXT update keeps the re-announcements still to come ===
+
+tape('Service keeps its re-announcement schedule after a silent TXT update', function (t) {
+  keepAlive(t)
+  const Registry = require('../lib/Registry.js')
+  const server = recordingNetwork()
+  const service = new Registry(server).publish({ name: 'Quiet', type: 'hap', port: 51826, host: 'me.local', probe: false })
+  service.once('up', function () {
+    setImmediate(function () {
+      const sent = server.mdns.sent.length
+      const timer = service.timer
+      service.updateTxt({ a: '1' }, true)
+
+      t.equal(server.mdns.sent.length, sent, 'nothing was sent')
+      const registered = server.registered[server.registered.length - 1]
+      t.deepEqual(registered.find(function (r) { return r.type === 'TXT' }).data, ['a=1'], 'the new TXT is answered for')
+      t.equal(service.timer, timer, 'the next re-announcement is the one already planned')
+      t.equal(timer._destroyed, false, 'and it was not cancelled')
+      t.equal(service.delay, 3000, 'at the same point of the schedule')
+
+      // That re-announcement carries the new TXT
+      service._emitAnnounce()
+      const last = server.mdns.sent[server.mdns.sent.length - 1].respond
+      t.deepEqual(last.find(function (r) { return r.type === 'TXT' }).data, ['a=1'], 'and will send the new TXT')
+      service.stop()
+      t.end()
+    })
+  })
+})
