@@ -1,6 +1,8 @@
 'use strict'
 
 const os = require('os')
+// The host a service gets when none is given: the machine's name, in .local when it has no domain
+const defaultHost = os.hostname().includes('.') ? os.hostname() : os.hostname() + '.local'
 const dgram = require('dgram')
 const EventEmitter = require('events').EventEmitter
 const tape = require('tape')
@@ -93,7 +95,7 @@ test('bonjour.find', function (bonjour, t) {
         t.deepEqual(s.txt, { foo: 'bar' })
         t.deepEqual(s.rawTxt, [Buffer.from('foo=bar')])
       }
-      t.equal(s.host, os.hostname())
+      t.equal(s.host, defaultHost)
       t.equal(s.port, 3000)
       t.equal(s.type, 'test')
       t.equal(s.protocol, 'tcp')

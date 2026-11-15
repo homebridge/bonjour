@@ -32,6 +32,7 @@ All notable changes to `bonjour-hap` will be documented in this file. This proje
 - fix(registry): withdraw the records that were announced when a service stops
 - fix(service): build the records again when a stopped service starts
 - fix(service): keep the re-announcements still to come after a silent TXT update
+- fix(service): add .local to a default host name that has no domain
 
 ## v3.11.0 (2026-11-01)
 

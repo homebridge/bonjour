@@ -72,7 +72,7 @@ Options are:
 
 - `name` (string) - at most 63 bytes. A name with a dot in it is sent
   as two names, so Apple devices do not list the service
-- `host` (string, optional) - defaults to local hostname
+- `host` (string, optional) - defaults to the local hostname, with `.local` added when it has no domain
 - `port` (number)
 - `type` (string)
 - `subtypes` (array of strings, optional) - kept on the service as
