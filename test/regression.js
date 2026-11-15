@@ -1643,3 +1643,40 @@ tape('Services of one type share the enumeration record until the last one stops
     })
   })
 })
+
+// === destroy() stops the browsers too ===
+
+tape('Bonjour.destroy() stops the browsers made with find()', function (t) {
+  port(function (p) {
+    const bonjour = Bonjour({ ip: '127.0.0.1', port: p, multicast: false })
+    const mdns = bonjour._server.mdns
+    const browser = bonjour.find({ type: 'hap' })
+    // eslint-disable-next-line array-callback-return
+    const shorthand = bonjour.find(function () {})
+    const stopped = bonjour.find({ type: 'http' })
+    stopped.stop()
+    bonjour.findOne({ type: 'ipp' })
+    browser._mdns.emit('response', shortLivedService(60), {})
+    t.equal(mdns.listenerCount('response'), 3, 'precondition: three browsers are listening')
+
+    bonjour.destroy(function () {
+      t.equal(mdns.listenerCount('response'), 0, 'none is listening afterwards')
+      t.equal(Object.keys(browser._expiryTimers).length, 0, 'and their timers are cancelled')
+      t.equal(bonjour._browsers.size, 0, 'nothing is kept of them')
+      t.equal(shorthand._onresponse, null)
+      t.end()
+    })
+  })
+})
+
+tape('Bonjour forgets a browser once it is stopped', function (t) {
+  port(function (p) {
+    const bonjour = Bonjour({ ip: '127.0.0.1', port: p, multicast: false })
+    const browser = bonjour.find({ type: 'hap' })
+    browser.stop()
+    t.equal(bonjour._browsers.size, 0, 'a stopped browser is not held on to')
+    browser.start()
+    t.equal(bonjour._browsers.size, 1, 'and is known again when started')
+    bonjour.destroy(function () { t.end() })
+  })
+})
