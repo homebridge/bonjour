@@ -1811,3 +1811,31 @@ tape('Registry does not announce a name found taken while the last probe was bei
     }, 400)
   })
 })
+
+// === A browser stopped from its own listener does nothing more ===
+
+tape('Browser stopped from its up listener sets no timers and lists nothing more', function (t) {
+  const browser = quietBrowser({ type: 'hap' })
+  const queries = []
+  browser.mdns.query = function (name) { queries.push(name) }
+  const ups = []
+  // What findOne() does with the first service it finds
+  browser.once('up', function (service) {
+    ups.push(service.name)
+    browser.stop()
+  })
+  browser.on('up', function (service) { if (ups.indexOf(service.name) === -1) ups.push(service.name) })
+
+  const service = function (name) {
+    return [
+      { type: 'PTR', name: '_hap._tcp.local', ttl: 4500, data: name + '._hap._tcp.local' },
+      { type: 'SRV', name: name + '._hap._tcp.local', ttl: 120, data: { port: 51826, target: name + '.local' } }
+    ]
+  }
+  browser.mdns.emit('response', { answers: service('First').concat(service('Second')), additionals: [] }, {})
+
+  t.deepEqual(ups, ['First'], 'no service came up after the stop')
+  t.deepEqual(Object.keys(browser._expiryTimers), [], 'no expiry timers were set, to ask again an hour later')
+  t.deepEqual(queries, [], 'and nothing was asked of the network')
+  t.end()
+})
