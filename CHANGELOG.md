@@ -40,6 +40,7 @@ All notable changes to `bonjour-hap` will be documented in this file. This proje
 - fix: throw when publish() or find() is called after destroy()
 - fix(browser): list a service once when it is announced again in other casing
 - fix(browser): keep the first value of a TXT key that is repeated with no value
+- fix(browser): keep expiry timers for listed services only, also when a PTR comes alone
 
 ## v3.11.0 (2026-11-01)
 

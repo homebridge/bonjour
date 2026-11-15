@@ -1714,3 +1714,31 @@ tape('Browser lists a service once when it is announced again in other casing', 
   t.equal(browser.services.length, 1, 'and the list holds it once')
   t.end()
 })
+
+// === Expiry timers belong to the services in the list ===
+
+tape('Browser sets no expiry timers for a PTR that never became a service', function (t) {
+  const browser = quietBrowser({ type: 'hap' })
+  t.teardown(function () { browser.stop() })
+
+  const packet = shortLivedService(60)
+  packet.answers.push({ type: 'PTR', name: '_hap._tcp.local', ttl: 60, data: 'Ghost._hap._tcp.local' })
+  browser.mdns.emit('response', packet, {})
+
+  t.deepEqual(Object.keys(browser._expiryTimers), ['brief._hap._tcp.local'], 'only the listed service has timers')
+  t.deepEqual(Object.keys(browser._expiries), ['brief._hap._tcp.local'])
+  t.end()
+})
+
+tape('Browser restarts a listed service\'s clock from a PTR that comes alone', function (t) {
+  const browser = quietBrowser({ type: 'hap' })
+  t.teardown(function () { browser.stop() })
+
+  browser.mdns.emit('response', shortLivedService(1), {})
+  t.equal(browser._expiries['brief._hap._tcp.local'].ms, 1000, 'precondition: due in 1 second')
+
+  // The answer to a re-query can hold the PTR only: the asker already has the rest
+  browser.mdns.emit('response', { answers: shortLivedService(60).answers, additionals: [] }, {})
+  t.equal(browser._expiries['brief._hap._tcp.local'].ms, 60000, 'now due in 60 seconds')
+  t.end()
+})
