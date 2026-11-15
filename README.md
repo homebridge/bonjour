@@ -103,9 +103,10 @@ services have been unpublished.
 
 #### `bonjour.destroy([callback])`
 
-Destroy the mdns instance. Says goodbye for every published service,
-then closes the udp socket. The optional `callback` will be called when
-that is done.
+Destroy the mdns instance. Stops every browser, says goodbye for every
+published service, then closes the udp socket. The optional `callback`
+will be called when that is done. After this, `publish()`, `find()` and
+`findOne()` throw.
 
 #### `Event: error`
 
