@@ -13,6 +13,8 @@ function Bonjour (opts) {
 
   this._server = new Server(opts)
   this._registry = new Registry(this._server)
+  // Browsers made by find() that are still listening
+  this._browsers = new Set()
   this._server.on('error', err => {
     if (this.listenerCount('error') > 0) {
       this.emit('error', err)
@@ -34,11 +36,11 @@ Object.assign(Bonjour.prototype, {
   },
 
   find: function (opts, onup) {
-    return new Browser(this._server.mdns, opts, onup)
+    return new Browser(this._server.mdns, opts, onup, this._browsers)
   },
 
   findOne: function (opts, cb) {
-    const browser = new Browser(this._server.mdns, opts)
+    const browser = new Browser(this._server.mdns, opts, undefined, this._browsers)
     browser.once('up', function (service) {
       browser.stop()
       if (cb) cb(service)
@@ -47,6 +49,9 @@ Object.assign(Bonjour.prototype, {
   },
 
   destroy: function (cb) {
+    // A browser left running kept its listener and its timers on the closed
+    // socket, and went on asking a network that could no longer answer
+    this._browsers.forEach(browser => browser.stop())
     this._registry.destroy(() => {
       this._server.mdns.destroy()
       if (cb) cb()
