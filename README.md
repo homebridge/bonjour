@@ -26,8 +26,8 @@ It was the only one in versions prior to v0.8.0.
 For new projects, the [ciao](https://github.com/homebridge/ciao) library is preferred. It is the default advertiser
 in `HAP-NodeJS` since v0.8.0, and closely follows RFC 6762 (mDNS) and RFC 6763 (DNS-SD).
 
-`bonjour-hap` does not fully implement those RFCs: for example it does not advertise service subtypes, and has no
-tiebreaking when two devices ask for the same name at the same moment. Bugs are fixed, but the code should not be
+`bonjour-hap` does not fully implement those RFCs: for example it has no tiebreaking when two devices ask for the
+same name at the same moment, and it does not pick a new name when the one it was given is taken. Bugs are fixed, but the code should not be
 taken as a reference for how mDNS should work.
 
 ## Installation
@@ -75,8 +75,9 @@ Options are:
 - `host` (string, optional) - defaults to the local hostname, with `.local` added when it has no domain
 - `port` (number)
 - `type` (string)
-- `subtypes` (array of strings, optional) - kept on the service as
-  `service.subtypes`, but not advertised
+- `subtypes` (array of strings, optional) - for example `['printer']`.
+  Each one is advertised, so a browser asking for only that subtype
+  (`_printer._sub._http._tcp.local`) finds the service
 - `protocol` (string, optional) - `udp` or `tcp` (default)
 - `txt` (object, optional) - a key/value object to broadcast as the TXT
   record. Each `key=value` entry can be at most 255 bytes

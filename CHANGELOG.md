@@ -33,6 +33,7 @@ All notable changes to `bonjour-hap` will be documented in this file. This proje
 - fix(service): build the records again when a stopped service starts
 - fix(service): keep the re-announcements still to come after a silent TXT update
 - fix(service): add .local to a default host name that has no domain
+- fix(service): advertise the subtypes given to publish()
 
 ## v3.11.0 (2026-11-01)
 
