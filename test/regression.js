@@ -1550,3 +1550,32 @@ tape('Service adds .local to a default host name that has no domain', function (
   t.equal(hostFor('raspberrypi', { host: 'given' }), 'given', 'and a host passed in is never changed')
   t.end()
 })
+
+// === Subtypes given to publish() are advertised ===
+
+tape('Service advertises a pointer for each of its subtypes', function (t) {
+  port(function (p) {
+    const bonjour = Bonjour({ ip: '127.0.0.1', port: p, multicast: false })
+    const service = bonjour.publish({ name: 'Printer', type: 'http', port: 631, host: 'me.local', probe: false, subtypes: ['printer', '_colour'] })
+    service.on('up', function () {
+      const server = bonjour._server
+      const reply = server._answer({ name: '_printer._sub._http._tcp.local', type: 'PTR' }, [])
+      t.ok(reply, 'a browser asking for the subtype gets an answer')
+      t.deepEqual(reply.answers.map(function (r) { return r.data }), ['Printer._http._tcp.local'], 'pointing at the service')
+      t.ok(reply.additionals.some(function (r) { return r.type === 'SRV' }), 'with its details alongside')
+      t.ok(server._answer({ name: '_colour._sub._http._tcp.local', type: 'PTR' }, []), 'a subtype given with its underscore works too')
+
+      service.stop(function () {
+        t.equal(server._answer({ name: '_printer._sub._http._tcp.local', type: 'PTR' }, []), undefined, 'and it is withdrawn on stop')
+        bonjour.destroy(function () { t.end() })
+      })
+    })
+  })
+})
+
+tape('Service refuses a subtype longer than 63 bytes', function (t) {
+  t.throws(function () {
+    return new Service({ name: 'Printer', type: 'http', port: 631, subtypes: ['x'.repeat(64)] })
+  }, /Service subtype ".*" is longer than 63 bytes/)
+  t.end()
+})
