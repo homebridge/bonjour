@@ -1696,3 +1696,21 @@ tape('Bonjour refuses to publish or find after destroy()', function (t) {
     })
   })
 })
+
+// === One service, however its name is cased ===
+
+tape('Browser lists a service once when it is announced again in other casing', function (t) {
+  const browser = quietBrowser({ type: 'hap' })
+  t.teardown(function () { browser.stop() })
+  const ups = []
+  browser.on('up', function (service) { ups.push(service.fqdn) })
+
+  const packet = shortLivedService(60)
+  browser.mdns.emit('response', packet, {})
+  const shouted = JSON.parse(JSON.stringify(packet).replace(/Brief\._hap/g, 'BRIEF._hap'))
+  browser.mdns.emit('response', shouted, {})
+
+  t.deepEqual(ups, ['Brief._hap._tcp.local'], 'up fired once')
+  t.equal(browser.services.length, 1, 'and the list holds it once')
+  t.end()
+})
