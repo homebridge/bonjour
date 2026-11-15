@@ -27,7 +27,14 @@ function Bonjour (opts) {
 util.inherits(Bonjour, EventEmitter)
 
 Object.assign(Bonjour.prototype, {
+  // After destroy() the socket is closed: a service published then was never
+  // announced and a browser never found anything, both without any error
+  _checkAlive: function (what) {
+    if (this._destroyed) throw new Error('Cannot ' + what + ' on a destroyed Bonjour instance')
+  },
+
   publish: function (opts) {
+    this._checkAlive('publish')
     return this._registry.publish(opts)
   },
 
@@ -36,10 +43,12 @@ Object.assign(Bonjour.prototype, {
   },
 
   find: function (opts, onup) {
+    this._checkAlive('find')
     return new Browser(this._server.mdns, opts, onup, this._browsers)
   },
 
   findOne: function (opts, cb) {
+    this._checkAlive('find')
     const browser = new Browser(this._server.mdns, opts, undefined, this._browsers)
     browser.once('up', function (service) {
       browser.stop()
@@ -49,6 +58,7 @@ Object.assign(Bonjour.prototype, {
   },
 
   destroy: function (cb) {
+    this._destroyed = true
     // A browser left running kept its listener and its timers on the closed
     // socket, and went on asking a network that could no longer answer
     this._browsers.forEach(browser => browser.stop())

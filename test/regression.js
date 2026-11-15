@@ -1680,3 +1680,19 @@ tape('Bonjour forgets a browser once it is stopped', function (t) {
     bonjour.destroy(function () { t.end() })
   })
 })
+
+// === A destroyed instance says so, instead of quietly doing nothing ===
+
+tape('Bonjour refuses to publish or find after destroy()', function (t) {
+  port(function (p) {
+    const bonjour = Bonjour({ ip: '127.0.0.1', port: p, multicast: false })
+    bonjour.destroy(function () {
+      t.throws(function () { bonjour.publish({ name: 'Late', type: 'hap', port: 51826 }) }, /Cannot publish on a destroyed Bonjour instance/)
+      t.throws(function () { bonjour.find({ type: 'hap' }) }, /Cannot find on a destroyed Bonjour instance/)
+      t.throws(function () { bonjour.findOne({ type: 'hap' }) }, /Cannot find on a destroyed Bonjour instance/)
+      t.doesNotThrow(function () { bonjour.unpublishAll() }, 'unpublishAll() is still harmless')
+      t.doesNotThrow(function () { bonjour.destroy() }, 'as is a second destroy()')
+      t.end()
+    })
+  })
+})

@@ -37,6 +37,7 @@ All notable changes to `bonjour-hap` will be documented in this file. This proje
 - fix(server): reply to a one-shot lookup only when it comes from a local network
 - docs: say the service enumeration record is safe with several services
 - fix: stop the browsers made with find() when destroy() is called
+- fix: throw when publish() or find() is called after destroy()
 
 ## v3.11.0 (2026-11-01)
 
