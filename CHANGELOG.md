@@ -31,6 +31,7 @@ All notable changes to `bonjour-hap` will be documented in this file. This proje
 - fix(prober): do not take a goodbye for the name as a sign that it is in use
 - fix(registry): withdraw the records that were announced when a service stops
 - fix(service): build the records again when a stopped service starts
+- fix(service): keep the re-announcements still to come after a silent TXT update
 
 ## v3.11.0 (2026-11-01)
 
