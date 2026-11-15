@@ -1839,3 +1839,32 @@ tape('Browser stopped from its up listener sets no timers and lists nothing more
   t.deepEqual(queries, [], 'and nothing was asked of the network')
   t.end()
 })
+
+// === A stop and start while the first announcement is going out ===
+
+tape('Service stopped and started again during its first announcement comes up once, after its new name check', function (t) {
+  keepAlive(t)
+  const Registry = require('../lib/Registry.js')
+  const server = recordingNetwork()
+  const service = new Registry(server).publish({ name: 'Quick', type: 'hap', port: 51826, host: 'me.local' })
+  const announce = service.announce
+  let restarted = false
+  service.announce = function (silent) {
+    announce.call(this, silent)
+    if (restarted) return
+    restarted = true
+    // The send of the first announcement is not confirmed yet
+    this.stop()
+    this.start()
+  }
+
+  const ups = []
+  service.on('up', function () { ups.push(service._prober ? 'still probing' : 'probed') })
+  // Two probes of up to 1 s each, and the announcements after them
+  setTimeout(function () {
+    t.deepEqual(ups, ['probed'], 'one up, once the new name check had passed')
+    t.equal(service.published, true, 'and the service counts as published')
+    service.stop()
+    t.end()
+  }, 2500)
+})
