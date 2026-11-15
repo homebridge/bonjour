@@ -1471,3 +1471,22 @@ tape('Prober does not take a goodbye for the name as a clash', function (t) {
     t.end()
   })
 })
+
+// === Stopping withdraws what was announced, also after a change of address ===
+
+tape('Registry withdraws the address that was announced, not the one the host has now', function (t) {
+  watchedService(t, function (service, server) {
+    const announced = service.packet
+    // The address changes, and the service stops before the next address check
+    withAddress('192.168.1.77', function () { service.stop() })
+
+    const goodbye = goodbyesSent(server.mdns)[0].respond
+    const addresses = function (records) {
+      return records.filter(function (r) { return r.type === 'A' }).map(function (r) { return r.data })
+    }
+    t.deepEqual(addresses(goodbye), ['192.168.1.5'], 'the goodbye names the announced address')
+    t.deepEqual(addresses(server.unregistered[server.unregistered.length - 1]), ['192.168.1.5'], 'which is no longer answered for')
+    t.ok(announced.every(function (r) { return r.ttl > 0 }), 'the announced records themselves are left as they were')
+    t.end()
+  })
+})
