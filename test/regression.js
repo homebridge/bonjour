@@ -896,7 +896,9 @@ tape('Server replies to a one-shot lookup by unicast, as a normal DNS answer', f
     server.mdns.respond = function (pkt, rinfo) { sent.push({ pkt, rinfo }) }
 
     const query = { id: 4242, questions: [{ name: 'host.local', type: 'A' }] }
-    server._respondToQuery(query, { address: '192.168.1.99', port: 40000 })
+    withAddress('192.168.1.5', function () {
+      server._respondToQuery(query, { address: '192.168.1.99', port: 40000 })
+    })
 
     t.equal(sent.length, 1)
     t.deepEqual(sent[0].rinfo, { address: '192.168.1.99', port: 40000 }, 'sent to the asker, not multicast')
@@ -1042,7 +1044,7 @@ const withAddress = function (address, fn) {
   const os = require('os')
   const real = os.networkInterfaces
   os.networkInterfaces = function () {
-    return { en0: [{ address, family: 'IPv4', internal: false }] }
+    return { en0: [{ address, family: 'IPv4', internal: false, netmask: '255.255.255.0', cidr: address + '/24' }] }
   }
   try {
     return fn()
@@ -1578,4 +1580,31 @@ tape('Service refuses a subtype longer than 63 bytes', function (t) {
     return new Service({ name: 'Printer', type: 'http', port: 631, subtypes: ['x'.repeat(64)] })
   }, /Service subtype ".*" is longer than 63 bytes/)
   t.end()
+})
+
+// === A one-shot lookup is only answered when it comes from a local network ===
+
+tape('Server does not reply to a one-shot lookup from outside its own networks', function (t) {
+  port(function (p) {
+    const bonjour = Bonjour({ ip: '127.0.0.1', port: p, multicast: false })
+    const server = bonjour._server
+    server.register({ name: 'host.local', type: 'A', ttl: 120, flush: true, data: '192.168.1.5' })
+
+    const sent = []
+    server.mdns.respond = function (pkt, rinfo) { sent.push({ pkt, rinfo }) }
+    const ask = function (address, port) {
+      sent.length = 0
+      withAddress('192.168.1.5', function () {
+        server._respondToQuery({ id: 1, questions: [{ name: 'host.local', type: 'A' }] }, { address, port })
+      })
+      return sent.length
+    }
+
+    t.equal(ask('203.0.113.9', 40000), 0, 'a source address from elsewhere gets nothing')
+    t.equal(ask('192.168.2.9', 40000), 0, 'nor one on a neighbouring network')
+    t.equal(ask('not an address', 40000), 0, 'nor something that is not an address')
+    t.equal(ask('192.168.1.99', 40000), 1, 'an asker on the same network is still answered')
+    t.equal(ask('203.0.113.9', p), 1, 'and a normal multicast query is answered as before')
+    bonjour.destroy(function () { t.end() })
+  })
 })
