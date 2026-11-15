@@ -46,6 +46,7 @@ All notable changes to `bonjour-hap` will be documented in this file. This proje
 - ci: pin the third-party actions to a commit
 - chore: use the git+https repository url, which npm otherwise rewrites with a warning
 - chore: drop package-lock.json from the files list, as npm never packs it
+- ci: name the labeler job labeler, not stale
 
 ## v3.11.0 (2026-11-01)
 
