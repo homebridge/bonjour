@@ -1445,3 +1445,29 @@ tape('Bonjour logs a network error when there is no error listener', function (t
     bonjour.destroy(function () { t.end() })
   })
 })
+
+// === A goodbye heard while probing does not mean the name is taken ===
+
+tape('Prober does not take a goodbye for the name as a clash', function (t) {
+  keepAlive(t)
+  const Registry = require('../lib/Registry.js')
+  const server = clashNetwork()
+  const query = server.mdns.query
+  // The old owner of the name (this service before a restart) is saying goodbye
+  server.mdns.query = function (name, type, cb) {
+    query(name, type, function () {
+      if (cb) cb()
+      server.mdns.emit('response', { answers: [{ type: 'SRV', name, ttl: 0, data: { port: 9, target: 'me.local' } }], additionals: [] })
+    })
+  }
+  const service = new Registry(server).publish({ name: 'Restarted', type: 'hap', port: 51826, host: 'me.local' })
+  service.on('error', function (err) {
+    t.fail('refused its own name: ' + err.message)
+    t.end()
+  })
+  service.on('up', function () {
+    t.pass('the service was announced')
+    service.stop()
+    t.end()
+  })
+})

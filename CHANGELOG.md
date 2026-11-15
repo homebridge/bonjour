@@ -28,6 +28,7 @@ All notable changes to `bonjour-hap` will be documented in this file. This proje
 - chore: drop package.json from the files list, as npm always includes it
 - test: cover TXT decoding edge cases, unheard errors and bad address restrictions
 - chore: declare the supported Node.js versions
+- fix(prober): do not take a goodbye for the name as a sign that it is in use
 
 ## v3.11.0 (2026-11-01)
 
