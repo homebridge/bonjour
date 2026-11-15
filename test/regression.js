@@ -1490,3 +1490,15 @@ tape('Registry withdraws the address that was announced, not the one the host ha
     t.end()
   })
 })
+
+tape('Service started again after a stop announces the address the host has now', function (t) {
+  watchedService(t, function (service, server) {
+    service.stop(function () {
+      withAddress('192.168.1.77', function () { service.start() })
+      const announced = announcedAddresses(server)
+      t.deepEqual(announced[announced.length - 1], ['192.168.1.77'], 'the new address, not the one from before the stop')
+      service.stop()
+      t.end()
+    })
+  })
+})
