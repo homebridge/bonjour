@@ -45,6 +45,7 @@ All notable changes to `bonjour-hap` will be documented in this file. This proje
 - ci: keep the npm publish token to the publish job, stay on npm 11 and pass refs as env
 - ci: pin the third-party actions to a commit
 - chore: use the git+https repository url, which npm otherwise rewrites with a warning
+- chore: drop package-lock.json from the files list, as npm never packs it
 
 ## v3.11.0 (2026-11-01)
 
