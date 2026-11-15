@@ -1742,3 +1742,41 @@ tape('Browser restarts a listed service\'s clock from a PTR that comes alone', f
   t.equal(browser._expiries['brief._hap._tcp.local'].ms, 60000, 'now due in 60 seconds')
   t.end()
 })
+
+// === A long-running browser forgets what it no longer needs ===
+
+tape('Browser forgets expired addresses, finished lookups and old re-asks', function (t) {
+  const browser = quietBrowser({ type: 'hap' })
+  const realNow = Date.now
+  let now = realNow()
+  Date.now = function () { return now }
+  t.teardown(function () {
+    Date.now = realNow
+    browser.stop()
+  })
+  const address = function (host, ttl) {
+    return { answers: [{ type: 'A', name: host, ttl, data: '1.2.3.4' }], additionals: [] }
+  }
+
+  browser.mdns.emit('response', address('gone.local', 10), {})
+  browser.mdns.emit('response', address('staying.local', 4500), {})
+  browser._queryAddresses('nobody.local')
+  browser._requery('_hap._tcp.local', 1000)
+
+  // Two minutes on, any packet at all arrives
+  now += 120 * 1000
+  browser.mdns.emit('response', address('other.local', 120), {})
+
+  t.deepEqual(Object.keys(browser._addressCache).sort(), ['other.local', 'staying.local'], 'the address that ran out is forgotten')
+  t.deepEqual(Object.keys(browser._addressQueries), [], 'as is the lookup for a host no listed service uses')
+  t.deepEqual(Object.keys(browser._lastQueried), [], 'and the old re-ask')
+  t.end()
+})
+
+tape('Browser keeps no empty entry for a goodbye from a host it never heard of', function (t) {
+  const browser = quietBrowser({ type: 'hap' })
+  t.teardown(function () { browser.stop() })
+  browser.mdns.emit('response', { answers: [{ type: 'A', name: 'stranger.local', ttl: 0, data: '1.2.3.4' }], additionals: [] }, {})
+  t.deepEqual(Object.keys(browser._addressCache), [])
+  t.end()
+})
