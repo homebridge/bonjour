@@ -47,6 +47,7 @@ All notable changes to `bonjour-hap` will be documented in this file. This proje
 - chore: use the git+https repository url, which npm otherwise rewrites with a warning
 - chore: drop package-lock.json from the files list, as npm never packs it
 - ci: name the labeler job labeler, not stale
+- ci: fix the labeler comment that says alpha pull requests get the beta label
 
 ## v3.11.0 (2026-11-01)
 
