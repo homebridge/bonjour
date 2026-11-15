@@ -35,6 +35,7 @@ All notable changes to `bonjour-hap` will be documented in this file. This proje
 - fix(service): add .local to a default host name that has no domain
 - fix(service): advertise the subtypes given to publish()
 - fix(server): reply to a one-shot lookup only when it comes from a local network
+- docs: say the service enumeration record is safe with several services
 
 ## v3.11.0 (2026-11-01)
 

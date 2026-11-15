@@ -1608,3 +1608,38 @@ tape('Server does not reply to a one-shot lookup from outside its own networks',
     bonjour.destroy(function () { t.end() })
   })
 })
+
+// === The service enumeration record is safe with several services ===
+
+tape('Services of one type share the enumeration record until the last one stops', function (t) {
+  port(function (p) {
+    const bonjour = Bonjour({ ip: '127.0.0.1', port: p, multicast: false })
+    const server = bonjour._server
+    const opts = { type: 'hap', port: 51826, host: 'me.local', probe: false, addUnsafeServiceEnumerationRecord: true }
+    const first = bonjour.publish(Object.assign({ name: 'First' }, opts))
+    const second = bonjour.publish(Object.assign({ name: 'Second' }, opts))
+    const listed = function () {
+      const reply = server._answer({ name: '_services._dns-sd._udp.local', type: 'PTR' }, [])
+      return reply ? reply.answers.map(function (r) { return r.data }) : []
+    }
+
+    second.on('up', function () {
+      t.deepEqual(listed(), ['_hap._tcp.local'], 'precondition: the type is listed once')
+
+      const goodbyes = []
+      const respond = server.mdns.respond
+      server.mdns.respond = function (packet, cb) {
+        goodbyes.push(packet)
+        return respond.apply(server.mdns, arguments)
+      }
+      first.stop(function () {
+        t.deepEqual(listed(), ['_hap._tcp.local'], 'still listed while the second service is up')
+        t.notOk(goodbyes[0].some(function (r) { return r.name === '_services._dns-sd._udp.local' }), 'and the first one\'s goodbye leaves it alone')
+        second.stop(function () {
+          t.deepEqual(listed(), [], 'gone once the last service of the type stops')
+          bonjour.destroy(function () { t.end() })
+        })
+      })
+    })
+  })
+})
