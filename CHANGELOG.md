@@ -52,6 +52,7 @@ All notable changes to `bonjour-hap` will be documented in this file. This proje
 - fix(browser): ignore the rest of a packet once a listener stops the browser
 - fix(service): ignore a send confirmed after the service was stopped and started again
 - docs: say a silent TXT update still goes out with the next planned re-announcement
+- chore(deps): dependency updates
 
 ## v3.11.0 (2026-11-01)
 
