@@ -1,5 +1,4 @@
 import { RemoteInfo, Socket } from "dgram";
-import { EventEmitter } from "events";
 
 // index.js sets `module.exports = Bonjour`, so these typings describe it the same way. With `export default`
 // an ES module importing this package was typed as receiving `{ default: Bonjour }`, while at runtime it
@@ -62,17 +61,13 @@ declare namespace Bonjour {
     port: number;
     referer: RemoteInfo;
     addresses: string[];
-    /**
-     * Decoded TXT record, if a TXT record was received. Keys are lower-cased.
-     * A value is a string, `true` for a key sent without a value, or a Buffer
-     * when the browser was created with `txt: { binary: true }`.
-     */
-    txt?: Record<string, string | true | Buffer>;
+    /** Decoded TXT record, if a TXT record was received. */
+    txt?: Record<string, string>;
     /** Raw TXT record blocks, if a TXT record was received. */
     rawTxt?: Buffer[];
   }
 
-  export interface Browser extends EventEmitter {
+  export interface Browser {
     /** Currently-known services. Updated as services come up, change, or go down. */
     services: BonjourService[];
 
@@ -82,14 +77,13 @@ declare namespace Bonjour {
     update(): void;
 
     on(event: "up" | "down" | "update", listener: (service: BonjourService) => void): this;
-    once(event: "up" | "down" | "update", listener: (service: BonjourService) => void): this;
   }
 
   /**
    * A service published via {@link Bonjour.publish}. Returned to the caller so
    * they can update the TXT record, stop, or destroy the advertisement.
    */
-  export interface Advertisement extends EventEmitter {
+  export interface Advertisement {
     name: string;
     type: string;
     protocol: "tcp" | "udp";
@@ -103,25 +97,19 @@ declare namespace Bonjour {
 
     start(): void;
     /**
-     * Stop advertising. The optional callback fires once the goodbye has been
-     * sent, with the error if sending it failed. It fires straight away when the
-     * service is not started.
+     * Stop advertising. The callback is required if the service has not been
+     * activated yet (the runtime calls it synchronously in that case).
      */
-    stop(callback?: (error?: Error | null) => void): void;
+    stop(callback?: () => void): void;
     /** Tear down the service and remove all listeners. */
     destroy(): void;
-    /**
-     * Replace the TXT record. If `silent` is true, it is not announced straight away: it is given out when
-     * asked for, and with the next re-announcement that was already planned.
-     */
+    /** Replace the TXT record. If `silent` is true, the new record is registered but not re-announced. */
     updateTxt(txt: Record<string, string>, silent?: boolean): void;
 
-    /** Emitted once each time the service is started, after its first announcement. Not emitted again by `updateTxt`. */
+    /** Emitted once after the first successful announcement. */
     on(event: "up", listener: () => void): this;
-    /** Emitted if the service name is already in use on the network. With no listener the error is logged with `console.warn`. */
+    /** Emitted if the service name is already in use on the network. */
     on(event: "error", listener: (err: Error) => void): this;
-    once(event: "up", listener: () => void): this;
-    once(event: "error", listener: (err: Error) => void): this;
   }
 
   export interface PublishOptions {
@@ -137,8 +125,8 @@ declare namespace Bonjour {
 
     /**
      * Adds a meta enumeration record (`_services._dns-sd._udp.local`) when announcing.
-     * Safe with several services, despite the name: since v3.10.5 services of the same type
-     * share the record, and it is withdrawn when the last of them stops.
+     * Only safe to enable when a single service is advertised on the responder, otherwise
+     * removing one service will break enumeration for the others.
      */
     addUnsafeServiceEnumerationRecord?: boolean;
 
@@ -154,18 +142,15 @@ declare namespace Bonjour {
     disabledIpv6?: boolean;
   }
 
-  export interface Bonjour extends EventEmitter {
+  export interface Bonjour {
     publish(options: PublishOptions): Advertisement;
-    /** Stop every published service. The callback gets the error if sending the goodbyes failed. */
-    unpublishAll(callback?: (error?: Error | null) => void): void;
-    /** With no options (or no `type`), browses for every service type. */
+    unpublishAll(callback?: () => void): void;
     find(
-      options?: BonjourFindOptions | null,
+      options: BonjourFindOptions,
       onUp?: (service: BonjourService) => void
     ): Browser;
-    find(onUp: (service: BonjourService) => void): Browser;
     findOne(
-      options?: BonjourFindOptions | null,
+      options: BonjourFindOptions,
       callback?: (service: BonjourService) => void
     ): Browser;
     /**
@@ -180,7 +165,6 @@ declare namespace Bonjour {
      * logged to `console.warn` so it does not crash the process.
      */
     on(event: "error", listener: (err: Error) => void): this;
-    once(event: "error", listener: (err: Error) => void): this;
   }
 
   export interface BonjourFactory {

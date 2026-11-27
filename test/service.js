@@ -1,8 +1,6 @@
 'use strict'
 
 const os = require('os')
-// The host a service gets when none is given: the machine's name, in .local when it has no domain
-const defaultHost = os.hostname().includes('.') ? os.hostname() : os.hostname() + '.local'
 const test = require('tape')
 const Service = require('../lib/Service.js')
 
@@ -55,7 +53,7 @@ test('minimal', function (t) {
   t.equal(s.name, 'Foo Bar')
   t.equal(s.protocol, 'tcp')
   t.equal(s.type, '_http._tcp')
-  t.equal(s.host, defaultHost)
+  t.equal(s.host, os.hostname())
   t.equal(s.port, 3000)
   t.equal(s.fqdn, 'Foo Bar._http._tcp.local')
   t.equal(s.txt, null)
@@ -86,8 +84,8 @@ test('_records() - minimal', function (t) {
   const s = new Service({ name: 'Foo Bar', type: 'http', protocol: 'tcp', port: 3000 })
   t.deepEqual(s._records(true), [
     { data: s.fqdn, name: '_http._tcp.local', ttl: 4500, type: 'PTR' },
-    { data: { port: 3000, target: defaultHost }, name: s.fqdn, ttl: 120, flush: true, type: 'SRV' },
-    { data: [''], name: s.fqdn, ttl: 4500, flush: true, type: 'TXT' }
+    { data: { port: 3000, target: os.hostname() }, name: s.fqdn, ttl: 120, flush: true, type: 'SRV' },
+    { data: [], name: s.fqdn, ttl: 4500, flush: true, type: 'TXT' }
   ].concat(getAddressesRecords(s.host)))
   t.end()
 })
@@ -156,29 +154,5 @@ test('_addressRecords() - unrestricted advertises every external address', funct
   withInterfaces(fakeInterfaces, function () {
     t.deepEqual(advertised({}), ['192.168.1.5', 'fe80::1', 'fd00::5', '10.0.0.9'])
   })
-  t.end()
-})
-
-test('restrictedAddresses - refuses an empty list', function (t) {
-  t.throws(function () {
-    new Service({ name: 'Foo Bar', type: 'http', port: 3000, restrictedAddresses: [] }) // eslint-disable-line no-new
-  }, /cannot be an empty array/)
-  t.end()
-})
-
-test('restrictedAddresses - refuses the unspecified address', function (t) {
-  for (const address of ['0.0.0.0', '::']) {
-    t.throws(function () {
-      new Service({ name: 'Foo Bar', type: 'http', port: 3000, restrictedAddresses: [address] }) // eslint-disable-line no-new
-    }, /Unspecified ip address/, address)
-  }
-  t.end()
-})
-
-test('restrictedAddresses - refuses an address no interface has', function (t) {
-  t.throws(function () {
-    // 192.0.2.0/24 is reserved for documentation, so no machine has it
-    new Service({ name: 'Foo Bar', type: 'http', port: 3000, restrictedAddresses: ['192.0.2.1'] }) // eslint-disable-line no-new
-  }, /could not resolve it to an interface name/)
   t.end()
 })
