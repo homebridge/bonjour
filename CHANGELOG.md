@@ -2,6 +2,58 @@
 
 All notable changes to `bonjour-hap` will be documented in this file. This project tries to adhere to [Semantic Versioning](http://semver.org/).
 
+## v3.11.1 (Pending Release)
+
+### Changes
+
+- fix(service): stop a TXT update at the wrong moment crashing or dropping records
+- fix(service): do not re-announce a service stopped from its own up listener
+- fix(registry): do not announce a service that was stopped while probing
+- fix(server): withdraw a stopped service's TXT record too
+- fix(browser): survive services and hosts named like built-in object properties
+- fix(browser): keep a TXT key named constructor
+- fix(browser): keep expiring services after a stop and start
+- fix(service): reject a name longer than 63 bytes
+- fix(service): reject a TXT entry longer than 255 bytes
+- fix(service): send a single zero byte for an empty TXT record
+- perf(server): leave out an SRV answer the querier already holds
+- fix(types): match the events, TXT values and optional arguments the code really has
+- docs(readme): describe the options, callbacks and events the code really has
+- docs(readme): say the library is maintained for HAP-NodeJS, with ciao preferred
+- refactor(helpers): use a Set in unique(), and line up the comment blocks
+- refactor(server): write the dot check with includes()
+- refactor(service): attach the methods with Object.assign, like the other files
+- style(registry): line up the comment blocks
+- style(network): add the missing 'use strict'
+- chore: drop package.json from the files list, as npm always includes it
+- test: cover TXT decoding edge cases, unheard errors and bad address restrictions
+- chore: declare the supported Node.js versions
+- fix(prober): do not take a goodbye for the name as a sign that it is in use
+- fix(registry): withdraw the records that were announced when a service stops
+- fix(service): build the records again when a stopped service starts
+- fix(service): keep the re-announcements still to come after a silent TXT update
+- fix(service): add .local to a default host name that has no domain
+- fix(service): advertise the subtypes given to publish()
+- fix(server): reply to a one-shot lookup only when it comes from a local network
+- docs: say the service enumeration record is safe with several services
+- fix: stop the browsers made with find() when destroy() is called
+- fix: throw when publish() or find() is called after destroy()
+- fix(browser): list a service once when it is announced again in other casing
+- fix(browser): keep the first value of a TXT key that is repeated with no value
+- fix(browser): keep expiry timers for listed services only, also when a PTR comes alone
+- fix(browser): forget expired addresses, finished lookups and old re-asks
+- ci: keep the npm publish token to the publish job, stay on npm 11 and pass refs as env
+- ci: pin the third-party actions to a commit
+- chore: use the git+https repository url, which npm otherwise rewrites with a warning
+- chore: drop package-lock.json from the files list, as npm never packs it
+- ci: name the labeler job labeler, not stale
+- ci: fix the labeler comment that says alpha pull requests get the beta label
+- fix(prober): report a name clash once, so the service stopped for it is not announced
+- fix(browser): ignore the rest of a packet once a listener stops the browser
+- fix(service): ignore a send confirmed after the service was stopped and started again
+- docs: say a silent TXT update still goes out with the next planned re-announcement
+- chore(deps): dependency updates
+
 ## v3.11.0 (2026-11-01)
 
 ### Changes
